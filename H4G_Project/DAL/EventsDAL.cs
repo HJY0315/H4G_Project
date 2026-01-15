@@ -52,14 +52,7 @@ namespace H4G_Project.DAL
         {
             try
             {
-                Dictionary<string, object> data = new Dictionary<string, object>
-                {
-                    { "name", ev.Name },
-                    { "start", ev.Start },
-                    { "end", ev.End }
-                };
-
-                await db.Collection("events").AddAsync(data);
+                await db.Collection("events").AddAsync(ev);
                 return true;
             }
             catch (Exception ex)
@@ -68,6 +61,7 @@ namespace H4G_Project.DAL
                 return false;
             }
         }
+
 
         // 🔹 Update event
         public async Task<bool> UpdateEvent(Event ev)

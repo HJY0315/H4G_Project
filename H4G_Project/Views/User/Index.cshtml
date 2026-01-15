@@ -1,20 +1,18 @@
 ﻿@{
-    ViewData["Title"] = "User";
-    var successMessage = TempData["SuccessMessage"] as string;
+    ViewData["Title"] = "User Calendar";
     Layout = "~/Views/Shared/_Member.cshtml";
-    string message = TempData["Message"]?.ToString();
+    var successMessage = TempData["SuccessMessage"] as string;
 }
 
 <!-- FullCalendar CSS -->
 <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css" rel="stylesheet" />
 
+<!-- SweetAlert CSS -->
+<link href="https://cdn.jsdelivr.net/npm/sweetalert2@10.16.6/dist/sweetalert2.min.css" rel="stylesheet" />
+
 <div class="container mt-4">
-
-    <h3 class="mb-3">Calendar</h3>
-
-    <!-- Calendar Container -->
+    <h3 class="mb-3">Event Calendar</h3>
     <div id="calendar"></div>
-
 </div>
 
 @section Scripts {
@@ -22,9 +20,11 @@
     <!-- FullCalendar JS -->
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
 
-    <!-- SweetAlert -->
-    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@10.16.6/dist/sweetalert2.min.css" rel="stylesheet" />
+    <!-- SweetAlert JS -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@10.16.6/dist/sweetalert2.all.min.js"></script>
+
+    <!-- Anti-forgery token (important for POST) -->
+    @Html.AntiForgeryToken()
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
@@ -52,10 +52,83 @@
                 },
 
                 eventClick: function (info) {
+
+                    const eventId = info.event.id;
+                    const eventTitle = info.event.title;
+                    const eventDate = info.event.startStr;
+
                     Swal.fire({
-                        title: info.event.title,
-                        text: 'Event clicked',
-                        icon: 'success'
+                        title: 'Register for Event',
+                        html: `
+                            <form id="registerForm">
+                                <input type="hidden" id="EventId" value="${eventId}" />
+
+                                <div class="form-group text-left">
+                                    <label>Event</label>
+                                    <input class="form-control" value="${eventTitle}" readonly />
+                                </div>
+
+                                <div class="form-group text-left mt-2">
+                                    <label>Date</label>
+                                    <input class="form-control" value="${eventDate}" readonly />
+                                </div>
+
+                                <div class="form-group text-left mt-2">
+                                    <label>Your Name</label>
+                                    <input type="text" id="Name" class="form-control" required />
+                                </div>
+
+                                <div class="form-group text-left mt-2">
+                                    <label>Email</label>
+                                    <input type="email" id="Email" class="form-control" required />
+                                </div>
+                            </form>
+                        `,
+                        showCancelButton: true,
+                        confirmButtonText: 'Register',
+                        cancelButtonText: 'Cancel',
+                        focusConfirm: false,
+                        preConfirm: () => {
+
+                            const name = document.getElementById('Name').value;
+                            const email = document.getElementById('Email').value;
+
+                            if (!name || !email) {
+                                Swal.showValidationMessage('Please fill in all fields');
+                                return false;
+                            }
+
+                            return {
+                                eventId: eventId,
+                                name: name,
+                                email: email
+                            };
+                        }
+                    }).then((result) => {
+
+                        if (result.isConfirmed) {
+
+                            fetch('/Calendar/Register', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'RequestVerificationToken':
+                                        document.querySelector('input[name="__RequestVerificationToken"]').value
+                                },
+                                body: JSON.stringify(result.value)
+                            })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.success) {
+                                    Swal.fire('Success', data.message, 'success');
+                                } else {
+                                    Swal.fire('Error', data.message, 'error');
+                                }
+                            })
+                            .catch(() => {
+                                Swal.fire('Error', 'Something went wrong', 'error');
+                            });
+                        }
                     });
                 }
             });
@@ -64,7 +137,7 @@
         });
     </script>
 
-    @* Show success message *@
+    @* Optional success popup *@
     @if (!string.IsNullOrEmpty(successMessage))
     {
         <script>

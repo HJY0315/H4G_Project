@@ -1,0 +1,57 @@
+@model H4G_Project.Models.Event
+
+@{
+    ViewData["Title"] = "Create Event";
+    Layout = "~/Views/Shared/_Staff.cshtml";
+}
+
+
+<div class="container mt-5">
+    <div class="card shadow">
+        <div class="card-header bg-dark text-white">
+            <h4 class="mb-0">Create New Event</h4>
+        </div>
+
+        <div class="card-body">
+
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="alert alert-success">
+                    @TempData["SuccessMessage"]
+                </div>
+            }
+
+            <form asp-action="CreateEvent" method="post">
+
+                <div class="form-group">
+                    <label asp-for="Name"></label>
+                    <input asp-for="Name" class="form-control" />
+                    <span asp-validation-for="Name" class="text-danger"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="Start"></label>
+                    <input asp-for="Start" type="datetime-local" class="form-control" />
+                    <span asp-validation-for="Start" class="text-danger"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="End"></label>
+                    <input asp-for="End" type="datetime-local" class="form-control" />
+                    <span asp-validation-for="End" class="text-danger"></span>
+                </div>
+
+                <button type="submit" class="btn btn-primary mt-3">
+                    <i class="fas fa-calendar-plus"></i> Create Event
+                </button>
+
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

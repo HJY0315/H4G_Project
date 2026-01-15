@@ -7,19 +7,20 @@ namespace H4G_Project.Models
     [FirestoreData]
     public class Event
     {
-        // Firestore document ID (not stored as a field)
+        // Firestore document ID (not stored in Firestore)
+        [FirestoreDocumentId]
         public string Id { get; set; }
 
         [FirestoreProperty("name")]
         [Required(ErrorMessage = "Event name is required")]
-        [StringLength(100, ErrorMessage = "Event name cannot exceed 100 characters")]
+        [StringLength(100)]
         public string Name { get; set; }
 
         [FirestoreProperty("start")]
         [Required]
-        public DateTime Start { get; set; }
+        public Timestamp Start { get; set; }
 
         [FirestoreProperty("end")]
-        public DateTime? End { get; set; }
+        public Timestamp? End { get; set; }
     }
 }

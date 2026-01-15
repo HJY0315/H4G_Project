@@ -1,16 +1,19 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
 using H4G_Project.DAL;
 using H4G_Project.Models;
 using Newtonsoft.Json;
 using System.Threading.Tasks;
 using DateTime = System.DateTime;
+using Google.Cloud.Firestore;
+
 
 namespace H4G_Project.Controllers
 {
     public class StaffController : Controller
     {
         StaffDAL staffContext = new StaffDAL();
+        EventsDAL eventsDAL = new EventsDAL();
 
         public async Task<IActionResult> Index()
         {
@@ -33,33 +36,22 @@ namespace H4G_Project.Controllers
         [HttpPost]
         public async Task<ActionResult> NewStaff(IFormCollection form)
         {
-            // Instantiate a new User object with form data
             Staff staff = new Staff
             {
-                Username = form["Username"], // Bind the username from the form
-                Email = form["Email"], // Bind the email from the form
-                Password = form["Password"] // Bind the password from the form
-                //LastDayOfService = DateTime.Parse(form["LastDayOfService"])
+                Username = form["Username"],
+                Email = form["Email"],
+                Password = form["Password"]
             };
 
-            // Hash the password before saving to the database
-            //user.Password = BCrypt.Net.BCrypt.HashPassword(user.Password);
-
-            // The model is valid, proceed to hash the password and save the user to Firestore
             bool addUserResult = await staffContext.AddStaff(staff);
 
-            // Check if the user was successfully added
             if (addUserResult)
             {
-                // Redirect to Index Page ie. Main page
-                Console.WriteLine("Success");
-                return RedirectToAction("Index", "Staff"); //Success
+                return RedirectToAction("Index", "Staff");
             }
             else
             {
-                // If there was a problem saving the user, redirect back to current page
-                Console.WriteLine("Error");
-                return View(); // Error
+                return View();
             }
         }
 
@@ -72,29 +64,19 @@ namespace H4G_Project.Controllers
         [HttpPost]
         public async Task<ActionResult> LogInUser(IFormCollection form)
         {
-            // Retrieve the user from the database by the email
-            // Assuming you have a method like GetUserByEmail in your AuthDAL
             Staff staff = await staffContext.GetStaffByEmail(form["Email"]);
 
-            if (staff != null)
+            if (staff != null && staff.Password == form["Password"])
             {
-                // Replace this with a hash comparison if you implement hashed password
-                if (staff.Password == form["Password"])
-                {
-                    //var userData = new { user.Username, user.Email };
-                    //string userJson = System.Text.Json.JsonSerializer.Serialize(userData);
-                    HttpContext.Session.SetString("Username", staff.Username);
-                    TempData["Username"] = staff.Username;
-                    TempData.Keep("Username");
-                    Console.WriteLine(TempData["Username"]);
-                    HttpContext.Session.SetString("UserEmail", staff.Email);
-                    return RedirectToAction("Index", "Staff");
-                }
+                HttpContext.Session.SetString("Username", staff.Username);
+                TempData["Username"] = staff.Username;
+                TempData.Keep("Username");
+                HttpContext.Session.SetString("UserEmail", staff.Email);
+                return RedirectToAction("Index", "Staff");
             }
 
             ModelState.AddModelError(string.Empty, "Invalid login attempt.");
             return RedirectToAction("Index", "Home");
-
         }
 
         public IActionResult LogOut()
@@ -102,5 +84,70 @@ namespace H4G_Project.Controllers
             HttpContext.Session.Clear();
             return RedirectToAction("Index", "Home");
         }
+
+        // ======================================================
+        // 🔹 EVENT MANAGEMENT (ADDED)
+        // ======================================================
+
+        // Show create event page
+        [HttpGet]
+        public IActionResult CreateEvent()
+        {
+            return View(new Event());
+        }
+
+        // Handle create event
+        [HttpPost]
+        public async Task<IActionResult> CreateEvent(
+    string Name,
+    DateTime Start,
+    DateTime? End)
+        {
+            if (string.IsNullOrEmpty(Name))
+            {
+                ModelState.AddModelError("Name", "Event name is required");
+                return View();
+            }
+
+            Event ev = new Event
+            {
+                Name = Name,
+                Start = Timestamp.FromDateTime(Start.ToUniversalTime()),
+                End = End.HasValue
+                    ? Timestamp.FromDateTime(End.Value.ToUniversalTime())
+                    : null
+            };
+
+            bool success = await eventsDAL.AddEvent(ev);
+
+            if (success)
+            {
+                TempData["SuccessMessage"] = "Event created successfully!";
+                return RedirectToAction(nameof(CreateEvent));
+            }
+
+            ModelState.AddModelError("", "Failed to create event.");
+            return View();
+        }
+
+
+
+        // Return events for FullCalendar
+        [HttpGet]
+        public async Task<IActionResult> GetEvents()
+        {
+            var events = await eventsDAL.GetAllEvents();
+
+            var calendarEvents = events.Select(e => new
+            {
+                id = e.Id,
+                title = e.Name,
+                start = e.Start.ToDateTime(),
+                end = e.End?.ToDateTime()
+            });
+
+            return Json(calendarEvents);
+        }
+
     }
 }
