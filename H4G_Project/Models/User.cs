@@ -32,6 +32,10 @@ namespace H4G_Project.Models
         [ValidateEmailExists]
         public string Email { get; set; }
 
+        [FirestoreProperty]
+        [Display(Name = "Role")]
+        public string Role { get; set; }
+
 
         /*[Display (Name = "Salutation")]
         [RegularExpression("Mr|Mrs|Ms|Dr|Mdm", ErrorMessage = "Please select a valid salutation!")]

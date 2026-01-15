@@ -109,7 +109,8 @@ namespace H4G_Project.DAL
                 {
                     {"Username", user.Username},
                     {"Email", user.Email},
-                    {"Password", user.Password }
+                    {"Password", user.Password },
+                    {"Role", user.Role}
                 };
 
                 //await docRef.SetAsync(NewUser);
