@@ -1,197 +1,209 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using System.ComponentModel.DataAnnotations;
 using H4G_Project.DAL;
 using H4G_Project.Models;
-using Newtonsoft.Json;
+using FirebaseAdmin.Auth;
 using System.Threading.Tasks;
-using DateTime = System.DateTime;
-using Google.Cloud.Firestore;
-
+using System.Linq;
 
 namespace H4G_Project.Controllers
 {
     public class StaffController : Controller
     {
-        StaffDAL staffContext = new StaffDAL();
-        EventsDAL eventsDAL = new EventsDAL();
+        private readonly StaffDAL _staffContext = new StaffDAL();
+        private readonly EventsDAL _eventsDAL = new EventsDAL();
+        private readonly UserDAL _userContext = new UserDAL();
 
+
+        // ===============================
+        // DASHBOARD
+        // ===============================
         public async Task<IActionResult> Index()
         {
-            string memberEmail = HttpContext.Session.GetString("email");
-            Staff staff = await staffContext.GetStaffByEmail(memberEmail);
-            return View();
-        }
+            string? email = HttpContext.Session.GetString("StaffEmail");
+            if (string.IsNullOrEmpty(email))
+                return RedirectToAction("Index", "Home");
 
-        public ActionResult Create()
-        {
-            return View();
-        }
+            Staff? staff = await _staffContext.GetStaffByEmail(email);
+            if (staff == null)
+            {
+                HttpContext.Session.Clear();
+                return RedirectToAction("Index", "Home");
+            }
 
-        public async Task<ActionResult> AddNewStaff()
-        {
-            Staff staff = new Staff();
             return View(staff);
         }
 
-        [HttpPost]
-        public async Task<ActionResult> NewStaff(IFormCollection form)
-        {
-            Staff staff = new Staff
-            {
-                Username = form["Username"],
-                Email = form["Email"],
-                Password = form["Password"]
-            };
-
-            bool addUserResult = await staffContext.AddStaff(staff);
-
-            if (addUserResult)
-            {
-                return RedirectToAction("Index", "Staff");
-            }
-            else
-            {
-                return View();
-            }
-        }
-
-        public async Task<ActionResult> LogInUser()
-        {
-            Staff staff = new Staff();
-            return View(staff);
-        }
-
-        [HttpPost]
-        public async Task<ActionResult> LogInUser(IFormCollection form)
-        {
-            Staff staff = await staffContext.GetStaffByEmail(form["Email"]);
-
-            if (staff != null && staff.Password == form["Password"])
-            {
-                HttpContext.Session.SetString("Username", staff.Username);
-                TempData["Username"] = staff.Username;
-                TempData.Keep("Username");
-                HttpContext.Session.SetString("UserEmail", staff.Email);
-                return RedirectToAction("Index", "Staff");
-            }
-
-            ModelState.AddModelError(string.Empty, "Invalid login attempt.");
-            return RedirectToAction("Index", "Home");
-        }
-
-        public IActionResult LogOut()
-        {
-            HttpContext.Session.Clear();
-            return RedirectToAction("Index", "Home");
-        }
-
-        // ======================================================
-        // 🔹 REPORTS
-        // ======================================================
-
+        // ===============================
+        // REPORTS (FILTERABLE)
+        // ===============================
         [HttpGet]
-        public async Task<IActionResult> Reports(string roleFilter, string eventFilter)
+        public async Task<IActionResult> Reports(string? roleFilter, string? eventFilter)
         {
-            var registrations = await eventsDAL.GetAllRegistrations();
+            var registrations = await _eventsDAL.GetAllRegistrations();
 
             // Get unique options for dropdowns
-            var allRoles = registrations
+            ViewData["AllRoles"] = registrations
                 .Where(r => !string.IsNullOrEmpty(r.Role))
                 .Select(r => r.Role)
                 .Distinct()
                 .ToList();
 
-            var allEvents = registrations
+            ViewData["AllEvents"] = registrations
                 .Where(r => !string.IsNullOrEmpty(r.EventName))
                 .Select(r => r.EventName)
                 .Distinct()
                 .ToList();
 
-            ViewData["AllRoles"] = allRoles;
-            ViewData["AllEvents"] = allEvents;
-
             // Apply filters
             if (!string.IsNullOrEmpty(roleFilter))
                 registrations = registrations
-                    .Where(r => r.Role != null && r.Role.Equals(roleFilter, StringComparison.OrdinalIgnoreCase))
+                    .Where(r => r.Role?.Equals(roleFilter, System.StringComparison.OrdinalIgnoreCase) ?? false)
                     .ToList();
 
             if (!string.IsNullOrEmpty(eventFilter))
                 registrations = registrations
-                    .Where(r => r.EventName != null && r.EventName.Equals(eventFilter, StringComparison.OrdinalIgnoreCase))
+                    .Where(r => r.EventName?.Equals(eventFilter, System.StringComparison.OrdinalIgnoreCase) ?? false)
                     .ToList();
 
-            // Keep current filter selections
             ViewData["RoleFilter"] = roleFilter;
             ViewData["EventFilter"] = eventFilter;
 
             return View(registrations);
         }
 
-
-        // ======================================================
-        // 🔹 EVENT MANAGEMENT (ADDED)
-        // ======================================================
-
-        // Show create event page
-        [HttpGet]
-        public IActionResult CreateEvent()
+        // ===============================
+        // REGISTER NEW STAFF
+        // ===============================
+        [HttpPost]
+        public async Task<IActionResult> NewStaff(IFormCollection form)
         {
-            return View(new Event());
+            string? email = form["Email"];
+            string? password = form["Password"];
+            string? username = form["Username"];
+
+            if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(password) || string.IsNullOrEmpty(username))
+            {
+                ModelState.AddModelError("", "Please fill in all required fields.");
+                return View("AddNewStaff");
+            }
+
+            try
+            {
+                await FirebaseAuth.DefaultInstance.CreateUserAsync(new UserRecordArgs
+                {
+                    Email = email,
+                    Password = password
+                });
+
+                await _staffContext.AddStaff(new Staff
+                {
+                    Username = username,
+                    Email = email
+                });
+
+                return RedirectToAction("Index", "Home");
+            }
+            catch (FirebaseAuthException ex)
+            {
+                ModelState.AddModelError("", ex.Message);
+                return View("AddNewStaff");
+            }
         }
 
-        // Handle create event
-        [HttpPost]
-        public async Task<IActionResult> CreateEvent(
-    string Name,
-    DateTime Start,
-    DateTime? End)
+        // ===============================
+        // FIREBASE TOKEN LOGIN
+        // ===============================
+        public class FirebaseTokenRequest
         {
-            if (string.IsNullOrEmpty(Name))
+            public string? Token { get; set; }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> FirebaseLogin([FromBody] FirebaseTokenRequest request)
+        {
+            if (string.IsNullOrEmpty(request?.Token))
+                return BadRequest("Missing token");
+
+            try
             {
-                ModelState.AddModelError("Name", "Event name is required");
-                return View();
+                var decoded = await FirebaseAuth.DefaultInstance.VerifyIdTokenAsync(request.Token);
+                string email = decoded.Claims["email"]?.ToString() ?? "";
+
+                Staff? staff = await _staffContext.GetStaffByEmail(email);
+                if (staff == null)
+                    return Unauthorized();
+
+                HttpContext.Session.SetString("StaffUsername", staff.Username ?? "");
+                HttpContext.Session.SetString("StaffEmail", staff.Email ?? "");
+
+                return Ok();
             }
-
-            Event ev = new Event
+            catch
             {
-                Name = Name,
-                Start = Timestamp.FromDateTime(Start.ToUniversalTime()),
-                End = End.HasValue
-                    ? Timestamp.FromDateTime(End.Value.ToUniversalTime())
-                    : null
-            };
-
-            bool success = await eventsDAL.AddEvent(ev);
-
-            if (success)
-            {
-                TempData["SuccessMessage"] = "Event created successfully!";
-                return RedirectToAction(nameof(CreateEvent));
+                return Unauthorized();
             }
+        }
 
-            ModelState.AddModelError("", "Failed to create event.");
+        // ===============================
+        // LOGOUT
+        // ===============================
+        public IActionResult LogOut()
+        {
+            HttpContext.Session.Clear();
+            return RedirectToAction("Index", "Home");
+        }
+
+        // ===============================
+        // ADD USER
+        // ===============================
+        [HttpGet]
+        public IActionResult AddUser()
+        {
             return View();
         }
 
-
-
-        // Return events for FullCalendar
-        [HttpGet]
-        public async Task<IActionResult> GetEvents()
+        [HttpPost]
+        public async Task<IActionResult> AddUser(IFormCollection form)
         {
-            var events = await eventsDAL.GetAllEvents();
+            string username = form["Username"];
+            string email = form["Email"];
+            string password = form["Password"];
+            string role = form["Role"];
 
-            var calendarEvents = events.Select(e => new
+            if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(email)
+                || string.IsNullOrEmpty(password) || string.IsNullOrEmpty(role))
             {
-                id = e.Id,
-                title = e.Name,
-                start = e.Start.ToDateTime(),
-                end = e.End?.ToDateTime()
-            });
+                ModelState.AddModelError("", "Please fill in all required fields.");
+                return View();
+            }
 
-            return Json(calendarEvents);
+            try
+            {
+                // 1️⃣ Create user in Firebase
+                var userRecord = await FirebaseAuth.DefaultInstance.CreateUserAsync(new UserRecordArgs
+                {
+                    Email = email,
+                    Password = password
+                });
+
+                // 2️⃣ Save user in your database
+                await _userContext.AddUser(new User
+                {
+                    Username = username,
+                    Email = email,
+                    Role = role
+                });
+
+                return RedirectToAction("Index");
+            }
+            catch (FirebaseAuthException ex)
+            {
+                ModelState.AddModelError("", ex.Message);
+                return View();
+            }
         }
+
+
 
     }
 }

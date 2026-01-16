@@ -1,9 +1,12 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
-    Layout = "~/Views/Shared/_Layout.cshtml";
+@model H4G_Project.Models.User
+
+@{
+    ViewData["Title"] = "Add User";
+    Layout = "~/Views/Shared/_Staff.cshtml";
 }
 
-<!-- Google Fonts -->
+
+
 <link href="https://fonts.googleapis.com/css?family=Poppins" rel="stylesheet">
 
 <style>
@@ -69,6 +72,10 @@
         text-align: center;
         -webkit-border-radius: 0 0 10px 10px;
         border-radius: 0 0 10px 10px;
+    }
+
+    form{
+        padding: 20px;
     }
 
 
@@ -311,118 +318,71 @@
     }
 </style>
 
+
 <div class="wrapper fadeInDown">
     <div id="formContent">
-        <!-- Tabs -->
-        <h2 class="User active underlineHover">User Sign In</h2>
-        <h2 class="Staff inactive underlineHover">Staff Sign In</h2>
+        <h2 class="User active">Add User</h2>
 
-        <!-- User Login Form -->
-        <form class="form member" id="memberForm">
-            <h3>Sign In as User</h3>
-            <input type="email" id="memberEmail" placeholder="Email" required />
-            <input type="password" id="memberPassword" placeholder="Password" required />
-            <input type="button" value="Log In" onclick="loginUser()" />
-        </form>
+        @using (Html.BeginForm("AddUser", "Staff", FormMethod.Post))
+        {
+            <p>Username : <input type="text" name="Username" placeholder="Username" required /></p>
+            <p>Email : <input type="email" name="Email" placeholder="Email" required /></p>
+            <p>Password : <input type="password" name="Password" placeholder="Min:8 Chars" required /></p>
+            <p>Role:
+                <label><input type="radio" name="Role" value="participant" required> Participant</label>
+                <label><input type="radio" name="Role" value="volunteer"> Volunteer</label>
+            </p>
 
-        <!-- Staff Login Form -->
-        <form class="form staff" id="staffForm" style="display:none;">
-            <h3>Sign In as Staff</h3>
-            <input type="email" id="staffEmail" placeholder="Email" required />
-            <input type="password" id="staffPassword" placeholder="Password" required />
-            <input type="button" value="Log In" onclick="loginStaff()" />
-            <span style="color:red;">@TempData["StaffMessage"]</span>
-        </form>
+            <input type="submit" value="Sign Up" />
+        }
+
     </div>
 </div>
 
-<!-- Firebase SDK -->
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
-import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
-
-// Your Firebase configuration
-const firebaseConfig = {
-    apiKey: "AIzaSyBDT4DVv_xmS1C_1WTOpmnlU4WqmqhrOfI",
-    authDomain: "squad-60b0b.firebaseapp.com",
-    projectId: "squad-60b0b",
-    storageBucket: "squad-60b0b.appspot.com",
-    messagingSenderId: "219668334828",
-    appId: "1:219668334828:web:5df0f3df3ed9a17e5a7dc9"
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-
-// ===============================
-// User login
-// ===============================
-window.loginUser = async function() {
-    const email = document.getElementById("memberEmail").value;
-    const password = document.getElementById("memberPassword").value;
-
-    try {
-        const cred = await signInWithEmailAndPassword(auth, email, password);
-        const token = await cred.user.getIdToken();
-
-        const response = await fetch("/User/FirebaseLogin", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ token })
-        });
-
-        if (response.ok) window.location.href = "/User";
-        else alert("Login failed: invalid user");
-    } catch (err) {
-        console.error(err);
-        alert("Login failed: " + err.message);
-    }
-}
-
-// ===============================
-// Staff login
-// ===============================
-window.loginStaff = async function() {
-    const email = document.getElementById("staffEmail").value;
-    const password = document.getElementById("staffPassword").value;
-
-    try {
-        const cred = await signInWithEmailAndPassword(auth, email, password);
-        const token = await cred.user.getIdToken();
-
-        const response = await fetch("/Staff/FirebaseLogin", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ token })
-        });
-
-        if (response.ok) window.location.href = "/Staff";
-        else alert("Login failed: invalid staff");
-    } catch (err) {
-        console.error(err);
-        alert("Login failed: " + err.message);
-    }
-}
-</script>
 
 <script>
-const memberTab = document.querySelector('h2.User');
-const staffTab = document.querySelector('h2.Staff');
-const memberForm = document.getElementById('memberForm');
-const staffForm = document.getElementById('staffForm');
+    const Countrydropdown = document.getElementById('CountryDropDown');
+    const CityDropdown = document.getElementById('CityDropDown');
+    const contactInput = document.getElementById('contacticc')
+    Countrydropdown.addEventListener("change", function () {
+        const country = Countrydropdown.value
+        if (country != null) {
+            fetch('https://raw.githubusercontent.com/russ666/all-countries-and-cities-json/master/countries.json') //find directory for countries.json and the internationalcalling code
+                .then(response => response.json())
+                .then(data => {
+                    const cities = data[country];
+                    CityDropdown.innerHTML = '';
+                    cities.forEach(city => {
+                        const option = document.createElement('option');
+                        option.value = city;
+                        option.text = city;
+                        CityDropdown.appendChild(option);
+                    });
 
-memberTab.addEventListener('click', () => {
-    memberTab.classList.add('active'); memberTab.classList.remove('inactive');
-    staffTab.classList.add('inactive'); staffTab.classList.remove('active');
-    memberForm.style.display = 'block';
-    staffForm.style.display = 'none';
-});
+                })
+            fetch('https://gist.githubusercontent.com/anubhavshrimal/75f6183458db8c453306f93521e93d37/raw/f77e7598a8503f1f70528ae1cbf9f66755698a16/CountryCodes.json') //find directory for internationalcode.json in the directory and put here i just use api for now
+                .then(response => response.json())
+                .then(data => {
+                    const countryvalue = data.find(obj => obj.name === country);
 
-staffTab.addEventListener('click', () => {
-    staffTab.classList.add('active'); staffTab.classList.remove('inactive');
-    memberTab.classList.add('inactive'); memberTab.classList.remove('active');
-    staffForm.style.display = 'block';
-    memberForm.style.display = 'none';
-});
+                    if (countryvalue == null) {
+                        contactInput.value = "";
+                    }
+                    else {
+                        contactInput.value = countryvalue.dial_code;
+                    }
+
+                })
+
+        }
+        else {
+            const placeholderOption = document.createElement('option');
+            placeholderOption.value = '';
+            placeholderOption.text = 'Select a city';
+            placeholderOption.disabled = true;
+            placeholderOption.selected = true;
+            CityDropdown.appendChild(placeholderOption);
+        }
+    }); ``
+
 </script>

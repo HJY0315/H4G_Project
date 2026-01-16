@@ -1,26 +1,45 @@
-using System.Configuration;
+using FirebaseAdmin;
+using Google.Apis.Auth.OAuth2;
+using H4G_Project.DAL;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Firebase initialization for auth
+if (FirebaseApp.DefaultInstance == null)
+{
+    FirebaseApp.Create(new AppOptions
+    {
+        Credential = GoogleCredential.FromFile(
+            Path.Combine(Directory.GetCurrentDirectory(), "DAL", "config", "squad-60b0b-firebase-adminsdk-fbsvc-582ee8d43f.json")
+        )
+    });
+}
+
+
+// Session
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(options =>
 {
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
 });
-// Add services to the container.
+
+// MVC
 builder.Services.AddControllersWithViews();
+
+builder.Services.AddScoped<UserDAL>();
+builder.Services.AddScoped<StaffDAL>();
+
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// Configure the HTTP request pipeline
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
-
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
@@ -30,9 +49,7 @@ app.UseSession();
 app.UseAuthorization();
 
 app.MapControllerRoute(
-        name: "default",
-        pattern: "{controller=Home}/{action=Index}/{id?}");
+    name: "default",
+    pattern: "{controller=Home}/{action=Index}/{id?}");
 
 app.Run();
-
-
