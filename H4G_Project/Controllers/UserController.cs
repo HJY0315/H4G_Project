@@ -33,7 +33,8 @@ namespace H4G_Project.Controllers
             {
                 Username = form["Username"], // Bind the username from the form
                 Email = form["Email"], // Bind the email from the form
-                Password = form["Password"] // Bind the password from the form
+                Password = form["Password"], // Bind the password from the form
+                Role = form["Role"]
             };
 
             // Hash the password before saving to the database

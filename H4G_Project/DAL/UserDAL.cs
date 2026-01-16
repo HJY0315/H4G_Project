@@ -143,7 +143,8 @@ namespace H4G_Project.DAL
                     {
                         Username = data.Username,
                         Email = data.Email,
-                        Password = data.Password
+                        Password = data.Password,
+                        Role = data.Role
 
                     });
                 }
