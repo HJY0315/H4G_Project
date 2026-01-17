@@ -253,6 +253,25 @@ namespace H4G_Project.DAL
             }
         }
 
+        // 🔹 Count confirmed registrations for an event
+        public async Task<int> CountConfirmedRegistrations(string eventId)
+        {
+            try
+            {
+                QuerySnapshot snapshot = await db.Collection("eventRegistrations")
+                                                 .WhereEqualTo("eventId", eventId)
+                                                 .WhereEqualTo("waitlistStatus", "Confirmed")
+                                                 .GetSnapshotAsync();
+                return snapshot.Count;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error counting confirmed registrations: {ex.Message}");
+                return 0;
+            }
+        }
+
+
         // 🔹 Update payment status
         public async Task<bool> UpdatePaymentStatus(string registrationId, string paymentStatus, string qrCode = null)
         {
