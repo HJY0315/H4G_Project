@@ -255,7 +255,23 @@ namespace H4G_Project.Controllers
         }
 
 
+        // ===============================
+        // VIEW ALL EVENTS
+        // ===============================
+        [HttpGet]
+        public async Task<IActionResult> ViewAllEvents()
+        {
+            // Get all events from Firestore
+            var events = await _eventsDAL.GetAllEvents();
 
+            // Sort by Start date ascending (earliest first)
+            var sortedEvents = events
+                .OrderBy(e => e.Start.ToDateTime())
+                .ToList();
+
+            // Pass the sorted list to the view
+            return View(sortedEvents);
+        }
 
 
     }

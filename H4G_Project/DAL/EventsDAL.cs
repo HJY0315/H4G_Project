@@ -89,6 +89,48 @@ namespace H4G_Project.DAL
             return events;
         }
 
+        public async Task<List<Event>> GetEventsByUserEmail(string userEmail)
+        {
+            // 1. Get all registrations for this user
+            CollectionReference regRef = db.Collection("eventRegistrations");
+            QuerySnapshot regSnapshot = await regRef.WhereEqualTo("email", userEmail).GetSnapshotAsync();
+
+            List<string> registeredEventNames = new();
+            foreach (var doc in regSnapshot.Documents)
+            {
+                if (doc.Exists)
+                {
+                    var data = doc.ToDictionary();
+                    if (data.ContainsKey("eventName"))
+                        registeredEventNames.Add(data["eventName"].ToString());
+                }
+            }
+
+            // 2. Get all events
+            CollectionReference eventsRef = db.Collection("events");
+            QuerySnapshot eventsSnapshot = await eventsRef.GetSnapshotAsync();
+
+            List<Event> events = new();
+            foreach (var doc in eventsSnapshot.Documents)
+            {
+                if (doc.Exists)
+                {
+                    Event ev = doc.ConvertTo<Event>();
+                    ev.Id = doc.Id;
+
+                    // Only include events the user registered for
+                    if (registeredEventNames.Contains(ev.Name))
+                        events.Add(ev);
+                }
+            }
+
+            // Sort by Start date ascending
+            events.Sort((a, b) => a.Start.ToDateTime().CompareTo(b.Start.ToDateTime()));
+
+            return events;
+        }
+
+
         /*
         public async Task<Event> ExtractEventByID(string eid)
         {
@@ -238,5 +280,35 @@ namespace H4G_Project.DAL
                 return false;
             }
         }
+
+
+        // Add a comment to an event
+        public async Task<bool> AddComment(string eventId, string username, string comment)
+        {
+            try
+            {
+                var commentData = new Dictionary<string, object>
+        {
+            { "username", username },
+            { "comment", comment },
+            { "timestamp", Timestamp.FromDateTime(DateTime.UtcNow) }
+        };
+
+                await db.Collection("events")
+                        .Document(eventId)
+                        .Collection("comments")
+                        .AddAsync(commentData);
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error adding comment: {ex.Message}");
+                return false;
+            }
+        }
+
+        
+
     }
 }

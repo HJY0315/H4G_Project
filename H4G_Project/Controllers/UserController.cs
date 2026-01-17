@@ -9,6 +9,8 @@ namespace H4G_Project.Controllers
     public class UserController : Controller
     {
         private readonly UserDAL _userContext = new UserDAL();
+        private readonly EventsDAL _eventsDAL = new EventsDAL();
+
 
         // ===============================
         // DASHBOARD
@@ -103,5 +105,24 @@ namespace H4G_Project.Controllers
             HttpContext.Session.Clear();
             return RedirectToAction("Index", "Home");
         }
+
+        // ===============================
+        // VIEW ALL EVENTS
+        // ===============================
+        [HttpGet]
+        public async Task<IActionResult> ViewAllEvents()
+        {
+            string? userEmail = HttpContext.Session.GetString("UserEmail");
+            if (string.IsNullOrEmpty(userEmail))
+                return RedirectToAction("Index", "Home");
+
+            // Get only events user is registered for
+            var events = await _eventsDAL.GetEventsByUserEmail(userEmail);
+
+            return View(events);
+        }
+
+
+
     }
 }
