@@ -164,6 +164,7 @@ namespace H4G_Project.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> AddUser(IFormCollection form)
         {
             string username = form["Username"];
@@ -171,23 +172,22 @@ namespace H4G_Project.Controllers
             string password = form["Password"];
             string role = form["Role"];
 
-            if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(email)
-                || string.IsNullOrEmpty(password) || string.IsNullOrEmpty(role))
+            // Password validation
+            if (string.IsNullOrEmpty(password) || password.Length < 6)
             {
-                ModelState.AddModelError("", "Please fill in all required fields.");
+                ModelState.AddModelError("Password", "Password must be at least 6 characters long.");
                 return View();
             }
 
             try
             {
-                // 1️⃣ Create user in Firebase
-                var userRecord = await FirebaseAuth.DefaultInstance.CreateUserAsync(new UserRecordArgs
-                {
-                    Email = email,
-                    Password = password
-                });
+                var userRecord = await FirebaseAuth.DefaultInstance.CreateUserAsync(
+                    new UserRecordArgs
+                    {
+                        Email = email,
+                        Password = password
+                    });
 
-                // 2️⃣ Save user in your database
                 await _userContext.AddUser(new User
                 {
                     Username = username,
@@ -195,7 +195,9 @@ namespace H4G_Project.Controllers
                     Role = role
                 });
 
-                return RedirectToAction("Index");
+                TempData["SuccessMessage"] = "User account created for " + email;
+                return RedirectToAction("AddUser");
+
             }
             catch (FirebaseAuthException ex)
             {
@@ -251,6 +253,8 @@ namespace H4G_Project.Controllers
             ModelState.AddModelError("", "Failed to create event.");
             return View();
         }
+
+
 
 
 
