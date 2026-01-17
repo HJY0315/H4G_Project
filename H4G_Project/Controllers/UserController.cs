@@ -3,6 +3,7 @@ using H4G_Project.DAL;
 using H4G_Project.Models;
 using FirebaseAdmin.Auth;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 
 namespace H4G_Project.Controllers
 {
@@ -211,35 +212,45 @@ namespace H4G_Project.Controllers
         [HttpGet]
         public async Task<IActionResult> ViewAllEvents()
         {
-            string? userEmail = HttpContext.Session.GetString("UserEmail");
+            string userEmail = HttpContext.Session.GetString("UserEmail");
             if (string.IsNullOrEmpty(userEmail))
                 return RedirectToAction("Index", "Home");
 
-            // Get only events user is registered for
             var events = await _eventsDAL.GetEventsByUserEmail(userEmail);
 
+            var eventComments = new Dictionary<string, List<CommentVM>>();
+
+            foreach (var ev in events)
+            {
+                var comments = await _eventsDAL.GetCommentTree(ev.Id);
+                eventComments[ev.Id] = comments;
+            }
+
+            ViewBag.EventComments = eventComments;
             return View(events);
         }
 
-        // Comments Section
 
+        // Add comment or reply
         [HttpPost]
-        public async Task<IActionResult> AddComment(string eventId, string comment)
+        public async Task<IActionResult> AddComment(string eventId, string comment, string parentCommentId = null)
         {
-            string username = HttpContext.Session.GetString("Username") ?? "Anonymous";
-            string email = HttpContext.Session.GetString("UserEmail") ?? "";
-            string role = HttpContext.Session.GetString("UserRole") ?? "";
-
-            if (string.IsNullOrEmpty(comment))
-                return BadRequest("Comment cannot be empty");
-
-            bool success = await _eventsDAL.AddComment(eventId, username, email, comment, role);
-
-            if (success)
+            if (string.IsNullOrEmpty(comment) || string.IsNullOrEmpty(eventId))
+            {
+                TempData["Message"] = "Invalid comment submission.";
                 return RedirectToAction("ViewAllEvents");
+            }
 
-            return BadRequest("Failed to add comment");
+            string username = HttpContext.Session.GetString("Username") ?? "Anonymous";
+            string role = HttpContext.Session.GetString("UserRole") ?? "Participant";
+            string email = HttpContext.Session.GetString("UserEmail") ?? "";
+
+            await _eventsDAL.AddComment(eventId, username, email, comment, role, parentCommentId);
+
+            return RedirectToAction("ViewAllEvents");
         }
+
+
 
 
 

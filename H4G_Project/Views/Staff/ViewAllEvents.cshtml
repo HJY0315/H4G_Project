@@ -1,61 +1,111 @@
 ﻿@model List<H4G_Project.Models.Event>
+@using Microsoft.AspNetCore.Html
 
 @{
-    ViewData["Title"] = "All Events";
-    Layout = "~/Views/Shared/_Staff.cshtml";
+    ViewData["Title"] = "My Events";
+    Layout = "~/Views/Shared/_Member.cshtml";
 }
 
 <div class="container mt-4">
-    <h3 class="mb-4">All Events</h3>
-
     <div class="row">
-        @if (Model != null && Model.Count > 0)
+        @foreach (var ev in Model)
         {
-            foreach (var ev in Model)
-            {
-                <div class="col-md-4 mb-4">
-                    <div class="card shadow-sm h-100">
-                        @* Event photo if exists *@
-                        @if (!string.IsNullOrEmpty(ev.eventPhoto))
-                        {
-                            <img src="@ev.eventPhoto" class="card-img-top" alt="@ev.Name" style="height:200px; object-fit:cover;" />
-                        }
+            <div class="col-md-4 mb-4">
+                <div class="card shadow" data-toggle="modal" data-target="#eventModal-@ev.Id" style="cursor:pointer;">
+                    <div class="card-body">
+                        <h5 class="card-title">@ev.Name</h5>
+                        <p class="card-text">
+                            <strong>Start:</strong> @ev.Start.ToDateTime().ToString("yyyy-MM-dd HH:mm")<br />
+                            <strong>End:</strong> @(ev.End?.ToDateTime().ToString("yyyy-MM-dd HH:mm") ?? "-")
+                        </p>
+                    </div>
+                </div>
+            </div>
 
-                        <div class="card-body d-flex flex-column">
-                            <h5 class="card-title">@ev.Name</h5>
+            <!-- Modal -->
+            <div class="modal fade" id="eventModal-@ev.Id" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-xl">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">@ev.Name</h5>
+                            <button type="button" class="close" data-dismiss="modal">&times;</button>
+                        </div>
 
-                            @if (!string.IsNullOrEmpty(ev.Details))
-                            {
-                                <p class="card-text">@ev.Details</p>
-                            }
+                        <div class="modal-body">
+                            <!-- Comments -->
+                            <div class="comments-section">
+                                <h6>Comments & Replies</h6>
 
-                            <ul class="list-unstyled">
-                                <li><strong>Start:</strong> @ev.Start.ToDateTime().ToString("dd MMM yyyy HH:mm")</li>
-                                @if (ev.End != null)
-                                {
-                                    <li><strong>End:</strong> @ev.End?.ToDateTime().ToString("dd MMM yyyy HH:mm")</li>
+                                @{
+                                    var eventComments = ViewBag.EventComments as Dictionary<string, List<H4G_Project.Models.CommentVM>>;
+                                    var comments = eventComments?.ContainsKey(ev.Id) == true ? eventComments[ev.Id] : new List<H4G_Project.Models.CommentVM>();
+
+                                    IHtmlContent RenderComment(CommentVM c, int depth)
+                                    {
+                                        var indent = Math.Min(depth * 25, 200);
+                                        var html = $@"
+                                                        <div style='margin-left:{indent}px; border-left: 2px solid #007bff; padding-left:10px; margin-bottom:5px;'>
+                                                        <strong>{c.Username} [{c.Role}]</strong>
+                                                        <div>{c.Comment}</div>
+                                                        <a href='#' onclick=""toggleReply('{c.Id}'); return false;"">Reply</a>
+                                                        <form method='post' action='/User/AddComment' id='reply-form-{c.Id}' style='display:none; margin-top:5px;'>
+                                                        <input type='hidden' name='eventId' value='{ev.Id}' />
+                                                        <input type='hidden' name='parentCommentId' value='{c.Id}' />
+                                                        <input type='text' name='comment' class='form-control' placeholder='Reply...' required />
+                                                        <button class='btn btn-sm btn-primary mt-1'>Post</button>
+                                                        </form>
+                                                        </div>";
+
+                                        var builder = new HtmlContentBuilder();
+                                        builder.AppendHtml(html);
+
+                                        foreach (var reply in c.Replies.OrderBy(r => r.Id))
+                                        {
+                                            builder.AppendHtml(RenderComment(reply, depth + 1));
+                                        }
+
+                                        return builder;
+                                    }
                                 }
-                                @if (ev.RegistrationDueDate != null)
-                                {
-                                    <li><strong>Registration Due:</strong> @ev.RegistrationDueDate.ToDateTime().ToString("dd MMM yyyy")</li>
-                                }
-                                <li><strong>Max Participants:</strong> @ev.MaxParticipants</li>
-                            </ul>
 
-                            <div class="mt-auto">
-                                <a href="@Url.Action("EditEvent", "Staff", new { id = ev.Id })" class="btn btn-primary btn-sm">Edit</a>
-                                <a href="@Url.Action("DeleteEvent", "Staff", new { id = ev.Id })" class="btn btn-danger btn-sm">Delete</a>
+                                @foreach (var c in comments.OrderBy(c => c.Id))
+                                {
+                                    @RenderComment(c, 0)
+                                }
+
+                                <!-- Add top-level comment -->
+                                <form asp-action="AddComment" method="post" class="mt-3">
+                                    <input type="hidden" name="eventId" value="@ev.Id" />
+                                    <input type="text" name="comment" class="form-control" placeholder="Add a comment..." required />
+                                    <button class="btn btn-primary mt-1">Comment</button>
+                                </form>
                             </div>
                         </div>
                     </div>
                 </div>
-            }
-        }
-        else
-        {
-            <div class="col-12">
-                <div class="alert alert-info">No events found.</div>
             </div>
         }
     </div>
 </div>
+
+<script>
+    function toggleReply(id) {
+        const f = document.getElementById("reply-form-" + id);
+        if(f) f.style.display = f.style.display === "none" ? "block" : "none";
+    }
+</script>
+
+<style>
+    .comments-section {
+        background: #f9f9f9;
+        padding: 15px;
+        border-radius: 5px;
+        max-height: 500px;
+        overflow-y: auto;
+    }
+
+        .comments-section a {
+            font-size: 0.8rem;
+            margin-left: 5px;
+        }
+</style>

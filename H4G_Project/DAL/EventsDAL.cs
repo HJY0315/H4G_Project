@@ -282,33 +282,35 @@ namespace H4G_Project.DAL
         }
 
 
-        // Add a comment to an event
-        public async Task<bool> AddComment(string eventId, string username, string email, string comment, string role)
+        // Add a comment OR reply to an event
+        public async Task<bool> AddComment(string eventId, string username, string email, string comment, string role, string parentId)
         {
             try
             {
-                var commentData = new Dictionary<string, object>
-        {
-            { "username", username },
-            { "email", email }, // store email too
-            { "comment", comment },
-            { "role", role },
-            { "timestamp", Timestamp.FromDateTime(DateTime.UtcNow) }
-        };
+                var data = new Dictionary<string, object>
+                {
+                    { "username", username },
+                    { "email", email },
+                    { "comment", comment },
+                    { "role", role },
+                    { "parentId", string.IsNullOrEmpty(parentId) ? null : parentId },
+                    { "timestamp", Timestamp.FromDateTime(DateTime.UtcNow) }
+                };
 
                 await db.Collection("events")
                         .Document(eventId)
                         .Collection("comments")
-                        .AddAsync(commentData);
+                        .AddAsync(data);
 
                 return true;
             }
-            catch (Exception ex)
+            catch
             {
-                Console.WriteLine($"Error adding comment: {ex.Message}");
                 return false;
             }
         }
+
+
 
 
         // Get comments for an event (role is stored in the comment document)
@@ -346,7 +348,78 @@ namespace H4G_Project.DAL
         }
 
 
+        public async Task<List<CommentVM>> GetThreadedComments(string eventId)
+        {
+            var list = new List<CommentVM>();
 
+            var snapshot = await db.Collection("events")
+                                   .Document(eventId)
+                                   .Collection("comments")
+                                   .OrderBy("timestamp")
+                                   .GetSnapshotAsync();
+
+            foreach (var doc in snapshot.Documents)
+            {
+                var d = doc.ToDictionary();
+
+                list.Add(new CommentVM
+                {
+                    Id = doc.Id,
+                    Username = d["username"].ToString(),
+                    Role = d["role"].ToString(),
+                    Comment = d["comment"].ToString(),
+                    ParentCommentId = d.ContainsKey("parentId")
+                        ? d["parentId"]?.ToString()
+                        : ""
+                });
+            }
+
+            return list;
+        }
+
+
+        // Get threaded comment tree
+        public async Task<List<CommentVM>> GetCommentTree(string eventId)
+        {
+            var snapshot = await db.Collection("events")
+                                   .Document(eventId)
+                                   .Collection("comments")
+                                   .OrderBy("timestamp")
+                                   .GetSnapshotAsync();
+
+            var all = new Dictionary<string, CommentVM>();
+
+            foreach (var doc in snapshot.Documents)
+            {
+                var d = doc.ToDictionary();
+                all[doc.Id] = new CommentVM
+                {
+                    Id = doc.Id,
+                    Username = d["username"].ToString(),
+                    Role = d["role"].ToString(),
+                    Comment = d["comment"].ToString(),
+                    ParentCommentId = d.ContainsKey("parentId") ? d["parentId"]?.ToString() : null,
+                    Timestamp = d.ContainsKey("timestamp") ? (Timestamp)d["timestamp"] : Timestamp.FromDateTime(DateTime.UtcNow)
+                };
+
+            }
+
+            var roots = new List<CommentVM>();
+
+            foreach (var c in all.Values)
+            {
+                if (!string.IsNullOrEmpty(c.ParentCommentId) && all.ContainsKey(c.ParentCommentId))
+                {
+                    all[c.ParentCommentId].Replies.Add(c);
+                }
+                else
+                {
+                    roots.Add(c);
+                }
+            }
+
+            return roots;
+        }
 
 
 

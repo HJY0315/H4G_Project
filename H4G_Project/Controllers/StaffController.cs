@@ -354,7 +354,7 @@ namespace H4G_Project.Controllers
             return View(participants);
         }
 
-        [HttpPost]
+        /* [HttpPost]
         public async Task<IActionResult> UpdateEngagement(string email, string engagementType)
         {
             if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(engagementType))
@@ -382,6 +382,6 @@ namespace H4G_Project.Controllers
             }
 
             return RedirectToAction("ManageEngagement");
-        }
+        } */
     }
 }
