@@ -157,8 +157,11 @@ namespace H4G_Project.Controllers
         // ADD USER
         // ===============================
         [HttpGet]
-        public IActionResult AddUser()
+        public IActionResult AddUser(string applicantName = "", string applicantEmail = "")
         {
+            // Pass application data to view for pre-population
+            ViewBag.ApplicantName = applicantName;
+            ViewBag.ApplicantEmail = applicantEmail;
             return View();
         }
 
@@ -167,15 +170,16 @@ namespace H4G_Project.Controllers
         {
             string username = form["Username"];
             string email = form["Email"];
-            string password = form["Password"];
             string role = form["Role"];
 
-            if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(email)
-                || string.IsNullOrEmpty(password) || string.IsNullOrEmpty(role))
+            if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(email) || string.IsNullOrEmpty(role))
             {
                 ModelState.AddModelError("", "Please fill in all required fields.");
                 return View();
             }
+
+            // Generate a random temporary password
+            string temporaryPassword = GenerateRandomPassword();
 
             try
             {
@@ -183,7 +187,7 @@ namespace H4G_Project.Controllers
                 var userRecord = await FirebaseAuth.DefaultInstance.CreateUserAsync(new UserRecordArgs
                 {
                     Email = email,
-                    Password = password
+                    Password = temporaryPassword
                 });
 
                 // 2️⃣ Save user in your database
@@ -194,16 +198,61 @@ namespace H4G_Project.Controllers
                     Role = role
                 });
 
-                return RedirectToAction("Index");
+                // Pass the generated password to the view for display
+                TempData["SuccessMessage"] = $"User account created successfully for {username}.";
+                TempData["GeneratedPassword"] = temporaryPassword;
+                TempData["UserEmail"] = email;
+                return View("UserCreated");
             }
             catch (FirebaseAuthException ex)
             {
-                ModelState.AddModelError("", ex.Message);
+                ModelState.AddModelError("", $"Error creating user: {ex.Message}");
                 return View();
             }
         }
 
+        // Helper method to generate random password
+        private string GenerateRandomPassword()
+        {
+            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%";
+            var random = new Random();
+            return new string(Enumerable.Repeat(chars, 12)
+                .Select(s => s[random.Next(s.Length)]).ToArray());
+        }
 
+        // ===============================
+        // DELETE USER (FOR TESTING)
+        // ===============================
+        [HttpPost]
+        public async Task<IActionResult> DeleteUser(string email)
+        {
+            if (string.IsNullOrEmpty(email))
+            {
+                TempData["ErrorMessage"] = "Email is required.";
+                return RedirectToAction("Index");
+            }
 
+            try
+            {
+                // 1️⃣ Delete from Firebase Authentication
+                var userRecord = await FirebaseAuth.DefaultInstance.GetUserByEmailAsync(email);
+                await FirebaseAuth.DefaultInstance.DeleteUserAsync(userRecord.Uid);
+
+                // 2️⃣ Delete from your Firestore database
+                await _userContext.DeleteUser(email);
+
+                TempData["SuccessMessage"] = $"User {email} deleted successfully from both Authentication and Database.";
+            }
+            catch (FirebaseAuthException ex)
+            {
+                TempData["ErrorMessage"] = $"Error deleting user from Authentication: {ex.Message}";
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Error deleting user: {ex.Message}";
+            }
+
+            return RedirectToAction("Index");
+        }
     }
 }

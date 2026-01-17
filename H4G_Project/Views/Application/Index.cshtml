@@ -113,9 +113,14 @@
 
         function approveApplication() {
             var name = document.getElementById("detailFamilyMember").innerText;
-            alert("Approved application for: " + name);
-            // To implement approve button and save status
+            var email = document.getElementById("detailEmail").innerText;
+            
+            // Close the modal first
             $('#detailsModal').modal('hide');
+            
+            // Redirect to user creation page
+            // You can pass application data as URL parameters if needed
+            window.location.href = '/Staff/AddUser?applicantName=' + encodeURIComponent(name) + '&applicantEmail=' + encodeURIComponent(email);
         }
 
         function rejectApplication() {
