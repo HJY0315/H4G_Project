@@ -1,4 +1,4 @@
-@model List<EventRegistration>
+@model List<H4G_Project.Models.EventRegistration>
 
 @{
     ViewData["Title"] = "Reports";
@@ -28,7 +28,7 @@
             </div>
 
             <div>
-                <label class="pl-3" for="eventFilter" class="form-label">Event:</label>
+                <label for="eventFilter" class="form-label">Event:</label>
                 <select class="form-select" id="eventFilter" onchange="filterTable()">
                     <option value="">All Events</option>
                     @foreach (var ev in Model.Select(r => r.EventName).Distinct())
@@ -44,7 +44,6 @@
         </div>
     </div>
 
-
     <table class="table table-bordered table-striped" id="firebaseTable">
         <thead class="thead-dark">
             <tr>
@@ -55,6 +54,7 @@
                 <th>Payment Amount</th>
                 <th>Payment Status</th>
                 <th>Registration Date</th>
+                <th>Waitlist Status</th>
             </tr>
         </thead>
         <tbody>
@@ -66,9 +66,42 @@
                     <td>@r.EventName</td>
                     <td>@r.Role</td>
                     <td>$@r.PaymentAmount</td>
-                    <td>@r.PaymentStatus</td>
+
+                    <!-- Payment badge -->
+                    <td>
+                        @if (r.PaymentStatus == "Completed")
+                        {
+                            <span class="badge bg-success">Completed</span>
+                        }
+                        else if (r.PaymentStatus == "Pending")
+                        {
+                            <span class="badge bg-warning text-dark">Pending</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary">@r.PaymentStatus</span>
+                        }
+                    </td>
+
                     <td>@r.RegistrationDate.ToDateTime().ToLocalTime()</td>
+
+                    <!-- Waitlist badge -->
+                    <td>
+                        @if (r.WaitlistStatus == "Confirmed")
+                        {
+                            <span class="badge bg-success">Confirmed</span>
+                        }
+                        else if (r.WaitlistStatus == "Waitlisted")
+                        {
+                            <span class="badge bg-danger">Waitlisted</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary">-</span>
+                        }
+                    </td>
                 </tr>
+
             }
         </tbody>
     </table>
@@ -76,7 +109,6 @@
 </div>
 
 @section Scripts {
-
     <!-- SheetJS (Excel export) -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
@@ -99,11 +131,51 @@
             });
         }
 
-        // Export to Excel
         function exportToExcel() {
             var table = document.getElementById("firebaseTable");
-            var workbook = XLSX.utils.table_to_book(table, { sheet: "Report" });
-            XLSX.writeFile(workbook, "Reports.xlsx");
+            var rows = Array.from(table.querySelectorAll("tbody tr"));
+
+            var confirmedRows = [];
+            var waitlistedRows = [];
+            var volunteerRows = [];
+
+            rows.forEach(row => {
+                var waitlistStatus = row.cells[7].innerText.trim(); // Waitlist Status column
+                var role = row.cells[3].innerText.trim();           // Role column
+
+                if (role.toLowerCase() === "volunteer") {
+                    volunteerRows.push(row);
+                } else if (waitlistStatus === "Confirmed") {
+                    confirmedRows.push(row);
+                } else if (waitlistStatus === "Waitlisted") {
+                    waitlistedRows.push(row);
+                }
+            });
+
+            function rowsToSheet(rowsArray) {
+                var data = [];
+                // Header
+                var headers = Array.from(table.querySelectorAll("thead th")).map(th => th.innerText);
+                data.push(headers);
+
+                rowsArray.forEach(row => {
+                    var rowData = Array.from(row.cells).map(td => td.innerText);
+                    data.push(rowData);
+                });
+
+                return XLSX.utils.aoa_to_sheet(data);
+            }
+
+            var wb = XLSX.utils.book_new();
+
+            // Just append sheets with names directly
+            XLSX.utils.book_append_sheet(wb, rowsToSheet(confirmedRows), "Confirmed");
+            XLSX.utils.book_append_sheet(wb, rowsToSheet(waitlistedRows), "Waitlisted");
+            XLSX.utils.book_append_sheet(wb, rowsToSheet(volunteerRows), "Volunteers");
+
+            XLSX.writeFile(wb, "Reports.xlsx");
         }
+
+
     </script>
 }
