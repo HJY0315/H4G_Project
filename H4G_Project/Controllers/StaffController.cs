@@ -287,16 +287,43 @@ namespace H4G_Project.Controllers
         [HttpGet]
         public async Task<IActionResult> ViewAllEvents()
         {
-            // Get all events from Firestore
             var events = await _eventsDAL.GetAllEvents();
 
-            // Sort by Start date ascending (earliest first)
             var sortedEvents = events
                 .OrderBy(e => e.Start.ToDateTime())
                 .ToList();
 
-            // Pass the sorted list to the view
+            var eventComments = new Dictionary<string, List<CommentVM>>();
+
+            foreach (var ev in sortedEvents)
+            {
+                var comments = await _eventsDAL.GetCommentTree(ev.Id); // same as user
+                eventComments[ev.Id] = comments;
+            }
+
+            ViewBag.EventComments = eventComments;
+
             return View(sortedEvents);
+        }
+
+
+        // Add comment or reply
+        [HttpPost]
+        public async Task<IActionResult> AddComment(string eventId, string comment, string parentCommentId = null)
+        {
+            if (string.IsNullOrEmpty(comment) || string.IsNullOrEmpty(eventId))
+            {
+                TempData["Message"] = "Invalid comment submission.";
+                return RedirectToAction("ViewAllEvents");
+            }
+
+            string username = HttpContext.Session.GetString("StaffUsername") ?? "Anonymous";
+            string role = HttpContext.Session.GetString("UserRole") ?? "staff";
+            string email = HttpContext.Session.GetString("StaffEmail") ?? "";
+
+            await _eventsDAL.AddComment(eventId, username, email, comment, role, parentCommentId);
+
+            return RedirectToAction("ViewAllEvents");
         }
 
         private string GenerateRandomPassword()

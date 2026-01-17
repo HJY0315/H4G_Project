@@ -411,18 +411,28 @@ namespace H4G_Project.DAL
             foreach (var doc in snapshot.Documents)
             {
                 var d = doc.ToDictionary();
+
+                // Safe extraction of fields
+                string username = d.ContainsKey("username") ? d["username"]?.ToString() ?? "Unknown" : "Unknown";
+                string role = d.ContainsKey("role") ? d["role"]?.ToString() ?? "Unknown" : "Unknown";
+                string commentText = d.ContainsKey("comment") ? d["comment"]?.ToString() ?? "" : "";
+                string parentId = d.ContainsKey("parentId") ? d["parentId"]?.ToString() : null;
+                Timestamp timestamp = d.ContainsKey("timestamp") && d["timestamp"] is Timestamp ts
+                                      ? ts
+                                      : Timestamp.FromDateTime(DateTime.UtcNow);
+
                 all[doc.Id] = new CommentVM
                 {
                     Id = doc.Id,
-                    Username = d["username"].ToString(),
-                    Role = d["role"].ToString(),
-                    Comment = d["comment"].ToString(),
-                    ParentCommentId = d.ContainsKey("parentId") ? d["parentId"]?.ToString() : null,
-                    Timestamp = d.ContainsKey("timestamp") ? (Timestamp)d["timestamp"] : Timestamp.FromDateTime(DateTime.UtcNow)
+                    Username = username,
+                    Role = role,
+                    Comment = commentText,
+                    ParentCommentId = parentId,
+                    Timestamp = timestamp
                 };
-
             }
 
+            // Build threaded comment tree
             var roots = new List<CommentVM>();
 
             foreach (var c in all.Values)
@@ -439,6 +449,7 @@ namespace H4G_Project.DAL
 
             return roots;
         }
+
 
 
 
