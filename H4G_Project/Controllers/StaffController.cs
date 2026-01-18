@@ -594,7 +594,16 @@ namespace H4G_Project.Controllers
             return View(participants);
         }
 
-        /* [HttpPost]
+        [HttpGet]
+        public IActionResult UpdateEngagement()
+        {
+            // Redirect to ManageEngagement page if accessed directly
+            TempData["InfoMessage"] = "Please use the 'Update Engagement' button next to each participant to modify their engagement type.";
+            return RedirectToAction("ManageEngagement");
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> UpdateEngagement(string email, string engagementType)
         {
             if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(engagementType))
@@ -622,6 +631,6 @@ namespace H4G_Project.Controllers
             }
 
             return RedirectToAction("ManageEngagement");
-        } */
+        }
     }
 }
