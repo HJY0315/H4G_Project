@@ -24,7 +24,7 @@ namespace H4G_Project.Models
 
         [FirestoreProperty]
         [Display(Name = "LastDayOfService")]
-        public DateTime? LastDayOfService { get; set; } = null;
+        public string? LastDayOfService { get; set; } = null;
 
     }
 }

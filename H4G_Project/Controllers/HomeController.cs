@@ -2,11 +2,8 @@
 using Microsoft.AspNetCore.Mvc;
 using H4G_Project.Models;
 using H4G_Project.DAL;
-using System.Diagnostics.Metrics;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-using System.ComponentModel.DataAnnotations;
-using Microsoft.AspNetCore.Mvc.Rendering;
-using System.Text.Json;
+using System.Threading.Tasks;
+using System;
 
 namespace H4G_Project.Controllers
 {
@@ -34,45 +31,106 @@ namespace H4G_Project.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Login(IFormCollection formData)
+        public async Task<ActionResult> Login(IFormCollection formData)
         {
             string memberemail = formData["memberlogin"];
             string staffemail = formData["stafflogin"];
             string staffpassword = formData["staffpassword"];
 
-            if (userContext.GetUserByEmail(memberemail) != null)
+            Console.WriteLine($"Login attempt - Member email: '{memberemail}', Staff email: '{staffemail}'");
+
+            // Check member login
+            if (!string.IsNullOrEmpty(memberemail))
             {
-                HttpContext.Session.SetString("email", memberemail);
-                //HttpContext.Session.SetString("RoleObject", JsonConvert.SerializeObject(userContext.Login(memberemail, memberpassword)));
-                return RedirectToAction("Index", "User");
+                Console.WriteLine($"Attempting member login for: {memberemail}");
+                var user = await userContext.GetUserByEmail(memberemail);
+
+                if (user != null)
+                {
+                    Console.WriteLine($"User found: {user.Email}, Username: {user.Username}, Role: {user.Role}");
+
+                    // Set proper session variables for user
+                    HttpContext.Session.SetString("UserEmail", user.Email);
+                    HttpContext.Session.SetString("Username", user.Username);
+                    HttpContext.Session.SetString("UserRole", user.Role);
+
+                    Console.WriteLine($"User logged in: {user.Email} ({user.Role})");
+                    return RedirectToAction("Index", "User");
+                }
+                else
+                {
+                    Console.WriteLine($"User not found for email: {memberemail}");
+                    TempData["MemberMessage"] = "Invalid member email";
+                }
             }
-            /*if (staffContext.Login(staffemail, staffpassword) != null)
+
+            // Check staff login with LastDayOfService validation
+            if (!string.IsNullOrEmpty(staffemail))
             {
-                Staff staff = staffContext.Login(staffemail, staffpassword);
-                //HttpContext.Session.SetString("RoleObject", JsonConvert.SerializeObject(staff));
-                HttpContext.Session.SetString("Role", staffemail);
-                if (staff.appointment == "Front Office Staff")
-                {
-                    return RedirectToAction("Index", "FrontOffice");
-                }
-                if (staff.appointment == "Station Manager")
-                {
-                    return RedirectToAction("Index", "StationManager");
-                }
-                if (staff.appointment == "Admin Manager")
-                {
-                    return RedirectToAction("Index", "AdminManager");
-                }
-                if (staff.appointment == "Delivery Man")
-                {
-                    return RedirectToAction("Index", "DeliveryMan");
-                }
-                return NotFound("You currently do not have a role, please confirm with the admin manager your role");
+                Console.WriteLine($"Attempting staff login for: {staffemail}");
+                var staff = await staffContext.GetStaffByEmail(staffemail);
 
-            }*/
+                if (staff != null)
+                {
+                    Console.WriteLine($"Staff found: {staff.Email}, Username: {staff.Username}");
+                    Console.WriteLine($"Staff LastDayOfService value: '{staff.LastDayOfService}'");
 
-            TempData["MemberMessage"] = "Invalid member login details";
-            TempData["StaffMessage"] = "Invalid staff login details";
+                    // Check if staff's last day of service has passed
+                    if (!string.IsNullOrEmpty(staff.LastDayOfService))
+                    {
+                        Console.WriteLine("LastDayOfService is not null or empty, checking date...");
+                        var today = DateTime.Today;
+                        Console.WriteLine($"Today's date: {today}");
+
+                        // Try to parse the LastDayOfService string to DateTime
+                        if (DateTime.TryParse(staff.LastDayOfService, out DateTime lastDayOfService))
+                        {
+                            Console.WriteLine($"Successfully parsed LastDayOfService: {lastDayOfService}");
+                            Console.WriteLine($"Staff last day of service: {lastDayOfService.Date}, Today: {today}");
+                            Console.WriteLine($"Comparison: {lastDayOfService.Date} < {today} = {lastDayOfService.Date < today}");
+
+                            if (lastDayOfService.Date < today)
+                            {
+                                Console.WriteLine($"BLOCKING LOGIN - Staff access denied - last day of service was {lastDayOfService.Date}");
+                                TempData["StaffMessage"] = "Access denied. Your employment period has ended.";
+                                return RedirectToAction("Index", "Home");
+                            }
+                            else
+                            {
+                                Console.WriteLine($"LOGIN ALLOWED - Last day of service ({lastDayOfService.Date}) is today or in the future");
+                            }
+                        }
+                        else
+                        {
+                            Console.WriteLine($"FAILED TO PARSE - Invalid LastDayOfService format: '{staff.LastDayOfService}'");
+                            // If the date format is invalid, allow login but log the issue
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("LastDayOfService is null or empty - no restriction applied");
+                    }
+
+                    // Set proper session variables for staff
+                    HttpContext.Session.SetString("StaffEmail", staff.Email);
+                    HttpContext.Session.SetString("StaffUsername", staff.Username);
+                    HttpContext.Session.SetString("UserRole", "Staff");
+
+                    Console.WriteLine($"Staff logged in: {staff.Email} (Staff)");
+                    return RedirectToAction("Index", "Staff");
+                }
+                else
+                {
+                    Console.WriteLine($"Staff not found for email: {staffemail}");
+                    TempData["StaffMessage"] = "Invalid staff email";
+                }
+            }
+
+            if (string.IsNullOrEmpty(memberemail) && string.IsNullOrEmpty(staffemail))
+            {
+                TempData["MemberMessage"] = "Please enter an email address";
+            }
+
             return RedirectToAction("Index", "Home");
         }
 
