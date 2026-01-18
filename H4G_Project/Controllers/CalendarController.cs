@@ -63,6 +63,22 @@ namespace H4G_Project.Controllers
                     return Json(new { success = false, message = "Event not found" });
                 }
 
+                // Count confirmed participants for this event
+                var allRegs = await eventsDAL.GetAllRegistrations();
+                int confirmedCount = allRegs.Count(r => r.EventId == request.EventId && r.WaitlistStatus == "Confirmed");
+                // Determine waitlist status
+                string waitlistStatus;
+                if (request.Role == "Volunteer")
+                {
+                    // Volunteers always confirmed
+                    waitlistStatus = "Confirmed";
+                }
+                else
+                {
+                    waitlistStatus = confirmedCount < eventDetails.MaxParticipants ? "Confirmed" : "Waitlisted";
+                }
+
+
                 // Create registration object
                 EventRegistration registration = new EventRegistration
                 {
@@ -85,7 +101,8 @@ namespace H4G_Project.Controllers
                     EmergencyContactName = request.EmergencyContactName,
                     PaymentStatus = "Pending",
                     PaymentAmount = request.Role == "Volunteer" ? 0.0 : 50.0,
-                    RegistrationDate = Timestamp.FromDateTime(DateTime.UtcNow)
+                    RegistrationDate = Timestamp.FromDateTime(DateTime.UtcNow),
+                    WaitlistStatus = waitlistStatus
                 };
 
                 // Generate mock QR code
@@ -113,7 +130,8 @@ namespace H4G_Project.Controllers
                     registrationId = registrationId,
                     qrCode = mockQrCode,
                     paymentAmount = registration.PaymentAmount,
-                    requiresPayment = request.Role == "Participant"
+                    requiresPayment = request.Role == "Participant",
+                    waitlistStatus = waitlistStatus
                 });
             }
             catch (Exception ex)

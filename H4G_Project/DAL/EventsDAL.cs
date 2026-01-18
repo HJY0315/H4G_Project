@@ -230,6 +230,58 @@ namespace H4G_Project.DAL
             }
         }
 
+        // For Attendance
+        public async Task<List<EventRegistration>> GetRegistrationsByEventId(string eventId)
+        {
+            var snapshot = await db.Collection("eventRegistrations")
+                                   .WhereEqualTo("eventId", eventId)
+                                   .GetSnapshotAsync();
+
+            return snapshot.Documents.Select(d => d.ConvertTo<EventRegistration>()).ToList();
+        }
+
+        public async Task<Event?> GetEventById(string id)
+        {
+            var doc = await db.Collection("events").Document(id).GetSnapshotAsync();
+            return doc.Exists ? doc.ConvertTo<Event>() : null;
+        }
+
+        public async Task<bool> UpdateRegistration(EventRegistration registration)
+        {
+            try
+            {
+                var docRef = db.Collection("eventRegistrations").Document(registration.Id);
+                var updates = new Dictionary<string, object>
+                {
+                    { "attendance", registration.Attendance }
+                };
+                await docRef.UpdateAsync(updates);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error updating registration: {ex.Message}");
+                return false;
+            }
+        }
+
+        public async Task<bool> UpdateEventQrCode(string eventId, string qrCode)
+        {
+            try
+            {
+                DocumentReference docRef = db.Collection("events").Document(eventId);
+
+                // Use SetAsync with merge option instead of UpdateAsync
+                await docRef.SetAsync(new { qrCode = qrCode }, SetOptions.MergeAll);
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                return false;
+            }
+        }
+
         // 🔹 Get registration by ID
         public async Task<EventRegistration> GetRegistrationById(string registrationId)
         {
@@ -252,6 +304,25 @@ namespace H4G_Project.DAL
                 return null;
             }
         }
+
+        // 🔹 Count confirmed registrations for an event
+        public async Task<int> CountConfirmedRegistrations(string eventId)
+        {
+            try
+            {
+                QuerySnapshot snapshot = await db.Collection("eventRegistrations")
+                                                 .WhereEqualTo("eventId", eventId)
+                                                 .WhereEqualTo("waitlistStatus", "Confirmed")
+                                                 .GetSnapshotAsync();
+                return snapshot.Count;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error counting confirmed registrations: {ex.Message}");
+                return 0;
+            }
+        }
+
 
         // 🔹 Update payment status
         public async Task<bool> UpdatePaymentStatus(string registrationId, string paymentStatus, string qrCode = null)
@@ -282,33 +353,35 @@ namespace H4G_Project.DAL
         }
 
 
-        // Add a comment to an event
-        public async Task<bool> AddComment(string eventId, string username, string email, string comment, string role)
+        // Add a comment OR reply to an event
+        public async Task<bool> AddComment(string eventId, string username, string email, string comment, string role, string parentId)
         {
             try
             {
-                var commentData = new Dictionary<string, object>
-        {
-            { "username", username },
-            { "email", email }, // store email too
-            { "comment", comment },
-            { "role", role },
-            { "timestamp", Timestamp.FromDateTime(DateTime.UtcNow) }
-        };
+                var data = new Dictionary<string, object>
+                {
+                    { "username", username },
+                    { "email", email },
+                    { "comment", comment },
+                    { "role", role },
+                    { "parentId", string.IsNullOrEmpty(parentId) ? null : parentId },
+                    { "timestamp", Timestamp.FromDateTime(DateTime.UtcNow) }
+                };
 
                 await db.Collection("events")
                         .Document(eventId)
                         .Collection("comments")
-                        .AddAsync(commentData);
+                        .AddAsync(data);
 
                 return true;
             }
-            catch (Exception ex)
+            catch
             {
-                Console.WriteLine($"Error adding comment: {ex.Message}");
                 return false;
             }
         }
+
+
 
 
         // Get comments for an event (role is stored in the comment document)
@@ -346,6 +419,88 @@ namespace H4G_Project.DAL
         }
 
 
+        public async Task<List<CommentVM>> GetThreadedComments(string eventId)
+        {
+            var list = new List<CommentVM>();
+
+            var snapshot = await db.Collection("events")
+                                   .Document(eventId)
+                                   .Collection("comments")
+                                   .OrderBy("timestamp")
+                                   .GetSnapshotAsync();
+
+            foreach (var doc in snapshot.Documents)
+            {
+                var d = doc.ToDictionary();
+
+                list.Add(new CommentVM
+                {
+                    Id = doc.Id,
+                    Username = d["username"].ToString(),
+                    Role = d["role"].ToString(),
+                    Comment = d["comment"].ToString(),
+                    ParentCommentId = d.ContainsKey("parentId")
+                        ? d["parentId"]?.ToString()
+                        : ""
+                });
+            }
+
+            return list;
+        }
+
+
+        // Get threaded comment tree
+        public async Task<List<CommentVM>> GetCommentTree(string eventId)
+        {
+            var snapshot = await db.Collection("events")
+                                   .Document(eventId)
+                                   .Collection("comments")
+                                   .OrderBy("timestamp")
+                                   .GetSnapshotAsync();
+
+            var all = new Dictionary<string, CommentVM>();
+
+            foreach (var doc in snapshot.Documents)
+            {
+                var d = doc.ToDictionary();
+
+                // Safe extraction of fields
+                string username = d.ContainsKey("username") ? d["username"]?.ToString() ?? "Unknown" : "Unknown";
+                string role = d.ContainsKey("role") ? d["role"]?.ToString() ?? "Unknown" : "Unknown";
+                string commentText = d.ContainsKey("comment") ? d["comment"]?.ToString() ?? "" : "";
+                string parentId = d.ContainsKey("parentId") ? d["parentId"]?.ToString() : null;
+                Timestamp timestamp = d.ContainsKey("timestamp") && d["timestamp"] is Timestamp ts
+                                      ? ts
+                                      : Timestamp.FromDateTime(DateTime.UtcNow);
+
+                all[doc.Id] = new CommentVM
+                {
+                    Id = doc.Id,
+                    Username = username,
+                    Role = role,
+                    Comment = commentText,
+                    ParentCommentId = parentId,
+                    Timestamp = timestamp
+                };
+            }
+
+            // Build threaded comment tree
+            var roots = new List<CommentVM>();
+
+            foreach (var c in all.Values)
+            {
+                if (!string.IsNullOrEmpty(c.ParentCommentId) && all.ContainsKey(c.ParentCommentId))
+                {
+                    all[c.ParentCommentId].Replies.Add(c);
+                }
+                else
+                {
+                    roots.Add(c);
+                }
+            }
+
+            return roots;
+        }
 
 
 

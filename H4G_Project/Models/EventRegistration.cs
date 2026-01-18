@@ -78,5 +78,14 @@ namespace H4G_Project.Models
 
         [FirestoreProperty("paymentDate")]
         public Timestamp? PaymentDate { get; set; }
+
+        [FirestoreProperty("waitlistStatus")]
+        public string WaitlistStatus { get; set; }
+
+
+
+        [FirestoreProperty("attendance")]
+        public bool Attendance { get; set; } = false;
+
     }
 }

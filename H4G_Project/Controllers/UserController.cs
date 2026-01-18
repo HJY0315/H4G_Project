@@ -3,6 +3,7 @@ using H4G_Project.DAL;
 using H4G_Project.Models;
 using FirebaseAdmin.Auth;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 
 namespace H4G_Project.Controllers
 {
@@ -10,6 +11,62 @@ namespace H4G_Project.Controllers
     {
         private readonly UserDAL _userContext = new UserDAL();
         private readonly EventsDAL _eventsDAL = new EventsDAL();
+
+
+        // Attendance system
+        public IActionResult ScanQR()
+        {
+            return View();
+        }
+        [HttpPost]
+        public async Task<IActionResult> MarkAttendance([FromBody] QRAttendanceRequest request)
+        {
+            if (string.IsNullOrEmpty(request.QrCode))
+                return Json(new { success = false, message = "Invalid QR code" });
+
+            string scannedQr = request.QrCode.Trim();
+
+
+            // ✅ Find the event matching the scanned QR
+            var events = await _eventsDAL.GetAllEvents();
+
+
+
+            var ev = events.FirstOrDefault(e => e.QrCode == scannedQr);
+
+            if (ev == null)
+            {
+                return Json(new { success = false, message = "QR code not recognized" });
+            }
+
+
+
+            // ✅ Find current user registration
+            string? userEmail = HttpContext.Session.GetString("UserEmail");
+            if (string.IsNullOrEmpty(userEmail))
+                return Json(new { success = false, message = "User not logged in" });
+
+            var registrations = await _eventsDAL.GetRegistrationsByEventId(ev.Id);
+            var registration = registrations.FirstOrDefault(r => r.Email == userEmail);
+
+            if (registration == null)
+                return Json(new { success = false, message = "You are not registered for this event" });
+
+            // ✅ Mark attendance
+            registration.Attendance = true;
+            await _eventsDAL.UpdateRegistration(registration);
+
+            return Json(new { success = true, message = "Attendance marked!" });
+        }
+
+
+
+
+        public class QRAttendanceRequest
+        {
+            public string QrCode { get; set; }
+        }
+
 
 
         // ===============================
@@ -25,43 +82,6 @@ namespace H4G_Project.Controllers
 
             return View(user);
         }
-
-//        // ===============================
-//        // REGISTER
-//        // ===============================
-//        [HttpPost]
-//        public async Task<IActionResult> NewUser(IFormCollection form)
-//        {
-//            string email = form["Email"];
-//            string password = form["Password"];
-//            string username = form["Username"];
-//            string role = form["Role"];
-//
-//            try
-//            {
-//                // Create user in Firebase
-//                await FirebaseAuth.DefaultInstance.CreateUserAsync(new UserRecordArgs
-//                {
-//                    Email = email,
-//                    Password = password
-//                });
-//
-//                // Save to your database
-//                await _userContext.AddUser(new User
-//                {
-//                    Username = username,
-//                    Email = email,
-//                    Role = role
-//                });
-//
-//                return RedirectToAction("Index", "Home");
-//            }
-//            catch (FirebaseAuthException ex)
-//            {
-//                ModelState.AddModelError("", ex.Message);
-//                return View("AddNewUser");
-//            }
-//        }
 
         // ===============================
         // FIREBASE TOKEN LOGIN
@@ -211,35 +231,45 @@ namespace H4G_Project.Controllers
         [HttpGet]
         public async Task<IActionResult> ViewAllEvents()
         {
-            string? userEmail = HttpContext.Session.GetString("UserEmail");
+            string userEmail = HttpContext.Session.GetString("UserEmail");
             if (string.IsNullOrEmpty(userEmail))
                 return RedirectToAction("Index", "Home");
 
-            // Get only events user is registered for
             var events = await _eventsDAL.GetEventsByUserEmail(userEmail);
 
+            var eventComments = new Dictionary<string, List<CommentVM>>();
+
+            foreach (var ev in events)
+            {
+                var comments = await _eventsDAL.GetCommentTree(ev.Id);
+                eventComments[ev.Id] = comments;
+            }
+
+            ViewBag.EventComments = eventComments;
             return View(events);
         }
 
-        // Comments Section
 
+        // Add comment or reply
         [HttpPost]
-        public async Task<IActionResult> AddComment(string eventId, string comment)
+        public async Task<IActionResult> AddComment(string eventId, string comment, string parentCommentId = null)
         {
-            string username = HttpContext.Session.GetString("Username") ?? "Anonymous";
-            string email = HttpContext.Session.GetString("UserEmail") ?? "";
-            string role = HttpContext.Session.GetString("UserRole") ?? "";
-
-            if (string.IsNullOrEmpty(comment))
-                return BadRequest("Comment cannot be empty");
-
-            bool success = await _eventsDAL.AddComment(eventId, username, email, comment, role);
-
-            if (success)
+            if (string.IsNullOrEmpty(comment) || string.IsNullOrEmpty(eventId))
+            {
+                TempData["Message"] = "Invalid comment submission.";
                 return RedirectToAction("ViewAllEvents");
+            }
 
-            return BadRequest("Failed to add comment");
+            string username = HttpContext.Session.GetString("Username") ?? "Anonymous";
+            string role = HttpContext.Session.GetString("UserRole") ?? "Participant";
+            string email = HttpContext.Session.GetString("UserEmail") ?? "";
+
+            await _eventsDAL.AddComment(eventId, username, email, comment, role, parentCommentId);
+
+            return RedirectToAction("ViewAllEvents");
         }
+
+
 
 
 
