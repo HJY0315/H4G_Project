@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using H4G_Project.DAL;
 using H4G_Project.Models;
+using H4G_Project.Services;
 using FirebaseAdmin.Auth;
 using Google.Cloud.Firestore;
 using System.Threading.Tasks;
@@ -9,6 +10,7 @@ using QRCoder;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
+using System;
 
 namespace H4G_Project.Controllers
 {
@@ -18,6 +20,13 @@ namespace H4G_Project.Controllers
         private readonly EventsDAL _eventsDAL = new EventsDAL();
         private readonly UserDAL _userContext = new UserDAL();
         private readonly ApplicationDAL _applicationContext = new ApplicationDAL();
+        private readonly NotificationService _notificationService;
+        private readonly NotificationDAL _notificationDAL = new NotificationDAL();
+
+        public StaffController(NotificationService notificationService)
+        {
+            _notificationService = notificationService;
+        }
 
 
         // ===============================
@@ -111,17 +120,42 @@ namespace H4G_Project.Controllers
         // ===============================
         // REGISTER NEW STAFF
         // ===============================
+        [HttpGet]
+        public IActionResult AddNewStaff()
+        {
+            return View();
+        }
+
         [HttpPost]
         public async Task<IActionResult> NewStaff(IFormCollection form)
         {
             string? email = form["Email"];
             string? password = form["Password"];
             string? username = form["Username"];
+            string? lastDayOfService = form["LastDayOfService"];
 
             if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(password) || string.IsNullOrEmpty(username))
             {
                 ModelState.AddModelError("", "Please fill in all required fields.");
                 return View("AddNewStaff");
+            }
+
+            // Validate LastDayOfService if provided
+            if (!string.IsNullOrEmpty(lastDayOfService))
+            {
+                if (DateTime.TryParse(lastDayOfService, out DateTime parsedDate))
+                {
+                    if (parsedDate.Date < DateTime.Today)
+                    {
+                        ModelState.AddModelError("", "Last Day of Service must be today or a future date.");
+                        return View("AddNewStaff");
+                    }
+                }
+                else
+                {
+                    ModelState.AddModelError("", "Invalid date format for Last Day of Service.");
+                    return View("AddNewStaff");
+                }
             }
 
             try
@@ -135,9 +169,11 @@ namespace H4G_Project.Controllers
                 await _staffContext.AddStaff(new Staff
                 {
                     Username = username,
-                    Email = email
+                    Email = email,
+                    LastDayOfService = string.IsNullOrEmpty(lastDayOfService) ? null : lastDayOfService
                 });
 
+                TempData["SuccessMessage"] = $"Staff account created successfully for {username}.";
                 return RedirectToAction("Index", "Home");
             }
             catch (FirebaseAuthException ex)
@@ -170,9 +206,48 @@ namespace H4G_Project.Controllers
                 if (staff == null)
                     return Unauthorized();
 
+                Console.WriteLine($"Staff found: {staff.Email}, Username: {staff.Username}");
+                Console.WriteLine($"Staff LastDayOfService value: '{staff.LastDayOfService}'");
+
+                // Check if staff's last day of service has passed
+                if (!string.IsNullOrEmpty(staff.LastDayOfService))
+                {
+                    Console.WriteLine("LastDayOfService is not null or empty, checking date...");
+                    var today = DateTime.Today;
+                    Console.WriteLine($"Today's date: {today}");
+
+                    // Try to parse the LastDayOfService string to DateTime
+                    if (DateTime.TryParse(staff.LastDayOfService, out DateTime lastDayOfService))
+                    {
+                        Console.WriteLine($"Successfully parsed LastDayOfService: {lastDayOfService}");
+                        Console.WriteLine($"Staff last day of service: {lastDayOfService.Date}, Today: {today}");
+                        Console.WriteLine($"Comparison: {lastDayOfService.Date} < {today} = {lastDayOfService.Date < today}");
+
+                        if (lastDayOfService.Date < today)
+                        {
+                            Console.WriteLine($"BLOCKING LOGIN - Staff access denied - last day of service was {lastDayOfService.Date}");
+                            return Unauthorized("Access denied. Your employment period has ended.");
+                        }
+                        else
+                        {
+                            Console.WriteLine($"LOGIN ALLOWED - Last day of service ({lastDayOfService.Date}) is today or in the future");
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine($"FAILED TO PARSE - Invalid LastDayOfService format: '{staff.LastDayOfService}'");
+                        // If the date format is invalid, allow login but log the issue
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("LastDayOfService is null or empty - no restriction applied");
+                }
+
                 HttpContext.Session.SetString("StaffUsername", staff.Username ?? "");
                 HttpContext.Session.SetString("StaffEmail", staff.Email ?? "");
 
+                Console.WriteLine($"Staff logged in: {staff.Email} (Staff)");
                 return Ok();
             }
             catch
@@ -356,9 +431,48 @@ namespace H4G_Project.Controllers
             string role = HttpContext.Session.GetString("UserRole") ?? "staff";
             string email = HttpContext.Session.GetString("StaffEmail") ?? "";
 
-            await _eventsDAL.AddComment(eventId, username, email, comment, role, parentCommentId);
+            // Add the comment to the database
+            bool commentAdded = await _eventsDAL.AddComment(eventId, username, email, comment, role, parentCommentId);
+
+            if (commentAdded)
+            {
+                // Create notifications for users registered for this event
+                await CreateCommentNotifications(eventId, username, comment);
+            }
 
             return RedirectToAction("ViewAllEvents");
+        }
+
+        private async Task CreateCommentNotifications(string eventId, string staffUsername, string comment)
+        {
+            try
+            {
+                // Get event details for notification
+                var eventDetails = await _eventsDAL.GetEventById(eventId);
+                if (eventDetails == null) return;
+
+                // Create notifications using NotificationDAL
+                bool success = await _notificationDAL.CreateCommentNotifications(
+                    eventId,
+                    eventDetails.Name,
+                    staffUsername,
+                    comment
+                );
+
+                if (success)
+                {
+                    Console.WriteLine($"Successfully created notifications for comment on event {eventDetails.Name}");
+                }
+                else
+                {
+                    Console.WriteLine($"Failed to create notifications for event {eventId}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error creating comment notifications: {ex.Message}");
+                // Don't throw - notification failure shouldn't break comment posting
+            }
         }
 
         private string GenerateRandomPassword()
