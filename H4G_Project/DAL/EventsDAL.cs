@@ -69,7 +69,7 @@ namespace H4G_Project.DAL
             return events;
         }
 
-        public async Task<List<Event>> GetEventsByUserEmail()
+        /*public async Task<List<Event>> GetEventsByUserEmail()
         {
             CollectionReference eventsRef = db.Collection("events");
             QuerySnapshot snapshot = await eventsRef.GetSnapshotAsync();
@@ -87,7 +87,7 @@ namespace H4G_Project.DAL
             }
 
             return events;
-        }
+        }*/
 
         public async Task<List<Event>> GetEventsByUserEmail(string userEmail)
         {
@@ -529,7 +529,18 @@ namespace H4G_Project.DAL
         }
 
 
+        public async Task<string> AddEventAndReturnId(Event ev)
+        {
+            DocumentReference docRef = await db.Collection("events").AddAsync(ev);
+            return docRef.Id;
+        }
 
+        public async Task UpdateEventPhoto(string eventId, string imageUrl)
+        {
+            await db.Collection("events")
+                    .Document(eventId)
+                    .UpdateAsync("eventPhoto", imageUrl);
+        }
 
     }
 }
