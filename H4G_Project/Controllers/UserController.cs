@@ -80,6 +80,19 @@ namespace H4G_Project.Controllers
             User user = await _userContext.GetUserByEmail(email);
             ViewBag.UserRole = HttpContext.Session.GetString("UserRole") ?? "Participant";
 
+            // Get engagement usage information for participants
+            if (user != null && user.Role == "Participant")
+            {
+                var (canRegister, currentCount, limit, message) = await _eventsDAL.CheckUserEngagementLimit(email, user.EngagementType, null);
+                ViewBag.EngagementUsage = new
+                {
+                    CurrentCount = currentCount,
+                    Limit = limit,
+                    CanRegister = canRegister,
+                    Message = message
+                };
+            }
+
             return View(user);
         }
 
