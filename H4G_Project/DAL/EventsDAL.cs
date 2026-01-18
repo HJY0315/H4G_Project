@@ -502,6 +502,49 @@ namespace H4G_Project.DAL
             return roots;
         }
 
+        // 🔹 Get volunteer registrations only (for staff approval)
+        public async Task<List<EventRegistration>> GetVolunteerRegistrations()
+        {
+            CollectionReference regRef = db.Collection("eventRegistrations");
+            QuerySnapshot snapshot = await regRef.WhereEqualTo("role", "Volunteer").GetSnapshotAsync();
+
+            List<EventRegistration> volunteerRegistrations = new();
+
+            foreach (DocumentSnapshot doc in snapshot.Documents)
+            {
+                if (doc.Exists)
+                {
+                    EventRegistration reg = doc.ConvertTo<EventRegistration>();
+                    reg.Id = doc.Id;
+                    volunteerRegistrations.Add(reg);
+                }
+            }
+
+            return volunteerRegistrations;
+        }
+
+        // 🔹 Update volunteer registration status
+        public async Task<bool> UpdateVolunteerRegistrationStatus(string registrationId, string status)
+        {
+            try
+            {
+                DocumentReference docRef = db.Collection("eventRegistrations").Document(registrationId);
+
+                Dictionary<string, object> updates = new Dictionary<string, object>
+                {
+                    { "status", status }
+                };
+
+                await docRef.UpdateAsync(updates);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error updating volunteer registration status: {ex.Message}");
+                return false;
+            }
+        }
+
 
 
 
