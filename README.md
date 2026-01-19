@@ -5,7 +5,7 @@ How might we reduce friction in activity sign-ups for both individuals and careg
 
 This project is built to streamline **MINDS’ day-to-day event operations**, helping staff, volunteers, and participants manage registrations, attendance, and engagement efficiently.
 
-## 
+
 
 ## **Intro**
 
@@ -13,7 +13,7 @@ Participants across different programmes often register separately for activitie
 
 OneMINDS centralizes event management, automates registration processes, tracks attendance, and improves engagement and interaction between MINDS, volunteers and participants.
 
-## 
+
 
 ## **Tech Stack**
 
@@ -28,7 +28,7 @@ OneMINDS centralizes event management, automates registration processes, tracks 
 * **Authentication**  
   * Firebase Authentication
 
-##
+
 
 ## **Features**
 
@@ -70,7 +70,7 @@ OneMINDS centralizes event management, automates registration processes, tracks 
 
 ![][image7]
 
-##
+
 
 ## **How Does It Work?**
 
@@ -84,7 +84,7 @@ OneMINDS centralizes event management, automates registration processes, tracks 
 2. **Participant / Volunteer Workflow:**  
    * Sign up → Browse available events → Register → Scan QR code to check in → Participate in event
 
-##
+
 
 ## **Getting Started**
 
@@ -95,33 +95,31 @@ OneMINDS centralizes event management, automates registration processes, tracks 
 * NuGet Packages: QRCoder  
 * Gmail Account
 
-##
-
 ### **Setup**
 
 1. Clone this repository  
 2. Move the given file into the following directory
-
+```
 squad-60b0b-firebase-adminsdk-fbsvc-cff3f594d5
 
 H4G\_Project/DAL/config
-
+```
 3. Go to your Google Account settings and set up 2MFA.  
 4. Go to your Security settings, find the "App passwords" section, Enter an app name and click “Create” to generate the 16-digit code.  
 5. Go to the appsettings.json file in the project directory:
-
+```
 H4G\_Project/appsettings.json 
-
+```
 6. Paste the 16-digit code into xxx.  
 7. Run the application:
-
+```
 dotnet run
-
+```
 8. Access the web app at:
-
+```
 [https://localhost:7080](https://localhost:7080) or [https://localhost:5080](https://localhost:7080)
+```
 
-##
 
 ## **Try It\!**
 
@@ -130,7 +128,7 @@ dotnet run
 **Staff**: rice@minds.com (password: ricerice)  
 **Volunteer**: meow@gmail.com (password: meowmeow)
 
-## 
+
 
 ## **What’s Next**
 
@@ -140,7 +138,7 @@ dotnet run
 * More advanced volunteer scheduling and task assignment  
 * Analytics dashboard for event participation and engagement trends
 
-##
+
 
 ## **Inspiration**
 
