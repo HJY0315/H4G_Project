@@ -362,3 +362,4 @@ MigrationBackup/
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 /H4G_Project/wwwroot/js/utils/firebase.js
+/H4G_Project/DAL/config/squad-60b0b-firebase-adminsdk-fbsvc-cff3f594d5.json

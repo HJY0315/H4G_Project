@@ -47,7 +47,7 @@
             <div class="col-md-3">
                 <label for="searchInput">Search:</label>
                 <input type="text" id="searchInput" onkeyup="searchClientTable()" class="form-control"
-                    placeholder="Search by name, email, or notes...">
+                       placeholder="Search by name, email, or notes...">
             </div>
             <div class="col-md-3">
                 <label for="disabilityFilter">Filter by Disability Type:</label>
@@ -110,7 +110,7 @@
                         <td>@r.Notes</td>
                         <td>
                             <a href="javascript:void(0);" class="text-primary"
-                                onclick="showClientDetails('@r.Id', '@r.FamilyMemberName', '@r.DisabilityType', '@r.CaregiverName', '@r.Notes', '@r.Email', '@r.ContactNumber', '@r.Occupation', '@(r.Status ?? "Pending")', '@r.MedicalReportUrl', '@r.IdDocumentUrl')">
+                               onclick="showClientDetails('@r.Id', '@r.FamilyMemberName', '@r.DisabilityType', '@r.CaregiverName', '@r.Notes', '@r.Email', '@r.ContactNumber', '@r.Occupation', '@(r.Status ?? "Pending")', '@r.MedicalReportUrl', '@r.IdDocumentUrl')">
                                 View Details
                             </a>
                         </td>
@@ -123,7 +123,7 @@
 
 <!-- Client Application Details Modal -->
 <div class="modal fade" id="clientDetailsModal" tabindex="-1" role="dialog" aria-labelledby="clientDetailsModalLabel"
-    aria-hidden="true">
+     aria-hidden="true">
     <div class="modal-dialog modal-xl" role="document">
         <div class="modal-content">
             <div class="modal-header">
@@ -148,25 +148,29 @@
                             <h6 id="documentTitle">Medical Report</h6>
                             <div class="btn-group btn-group-sm" role="group">
                                 <button type="button" class="btn btn-outline-primary active document-toggle-btn"
-                                    id="medicalReportBtn" onclick="showMedicalReport()">
+                                        id="medicalReportBtn" onclick="showMedicalReport()">
                                     <i class="fas fa-file-medical"></i> Medical Report
                                 </button>
                                 <button type="button" class="btn btn-outline-secondary document-toggle-btn"
-                                    id="idDocumentBtn" onclick="showIdDocument()">
+                                        id="idDocumentBtn" onclick="showIdDocument()">
                                     <i class="fas fa-id-card"></i> ID Document
                                 </button>
                             </div>
                         </div>
                         <iframe id="clientDetailDocument" src="" width="100%" height="600px"
-                            style="border:1px solid #ccc;"></iframe>
+                                style="border:1px solid #ccc;"></iframe>
                     </div>
                 </div>
             </div>
             <div class="modal-footer" id="clientModalFooter">
                 <button type="button" class="btn btn-success" id="clientApproveBtn" onclick="approveClientApplication()"
-                    style="display:none;">Approve</button>
+                        style="display:none;">
+                    Approve
+                </button>
                 <button type="button" class="btn btn-danger" id="clientRejectBtn" onclick="rejectClientApplication()"
-                    style="display:none;">Decline</button>
+                        style="display:none;">
+                    Decline
+                </button>
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
             </div>
         </div>
@@ -179,13 +183,13 @@
             transition: all 0.2s ease-in-out;
         }
 
-        .document-toggle-btn:hover {
-            transform: translateY(-1px);
-        }
+            .document-toggle-btn:hover {
+                transform: translateY(-1px);
+            }
 
-        .document-toggle-btn.active {
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-        }
+            .document-toggle-btn.active {
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            }
     </style>
     <script>
         // Client Application Variables
@@ -402,5 +406,5 @@
                 // Reapply filters (which will show all rows since filters are cleared)
                 filterClientTable();
             }
-        </script>
+    </script>
 }
