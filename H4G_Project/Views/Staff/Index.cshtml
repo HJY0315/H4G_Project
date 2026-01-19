@@ -77,6 +77,13 @@
 
                 events: '/Calendar/GetEvents',
 
+                eventTimeFormat: {
+                    hour: 'numeric',
+                    minute: '2-digit',
+                    meridiem: 'short' 
+                },
+
+
                 dateClick: function (info) {
                     Swal.fire({
                         title: 'Date selected',
