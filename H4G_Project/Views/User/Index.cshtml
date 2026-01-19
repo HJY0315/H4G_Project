@@ -92,6 +92,36 @@
 
                 events: '/Calendar/GetEvents',
 
+                eventDisplay: 'block',
+
+            // Two-line event content
+            eventContent: function(arg) {
+                const start = arg.event.start;
+                const end = arg.event.end;
+
+                // Format time
+                const startTime = start ? new Date(start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) : '';
+                const endTime = end ? new Date(end).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) : '';
+
+                const el = document.createElement('div');
+                el.style.backgroundColor = '#56baed';
+                el.style.color = '#fff';
+                el.style.padding = '2px 4px';
+                el.style.marginBottom = '2px';
+                el.style.borderRadius = '4px';
+                el.style.fontSize = '12px';
+                el.style.fontWeight = '500';
+                el.style.lineHeight = '1.2';
+                el.style.whiteSpace = 'normal'; // allow text to wrap
+                el.style.wordBreak = 'break-word';
+
+                // Two-line content: time first, name second
+                el.innerHTML = `<div>${startTime}${endTime ? ' - ' + endTime : ''}</div>
+                                <div style="font-weight:600;">${arg.event.title}</div>`;
+
+                return { domNodes: [el] };
+            },
+
                 dateClick: function (info) {
                     Swal.fire({
                         title: 'Date selected',
