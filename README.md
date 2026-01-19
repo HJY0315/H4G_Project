@@ -7,7 +7,7 @@ This project is built to streamline **MINDS’ day-to-day event operations**, he
 
 
 
-## **Intro**
+# **Intro**
 
 Participants across different programmes often register separately for activities through different web-based forms, resulting in inefficiencies in centralising registration. Volunteers also register via spreadsheets or email, with no consolidated system. Staff manually create schedules with Excel sheets, track attendance, and contact caregivers, which is time consuming.
 
@@ -45,15 +45,19 @@ OneMINDS centralizes event management, automates registration processes, tracks 
 * **Calendar**  
   * Participants/Volunteers are able to view and register for events
   * Staff is able to visualize the overview of all available events throughout the year
-    ![][image1]
+
+    ![Calendar](images/calendar.png)
 
 * **Event Management** 
-  * Staff create events, indicating maximum participants, registration due dates, etc. and view them  
-    ![][image2]  
+  * Staff create events, indicating maximum participants, registration due dates, etc. and view them
+
+    ![Event Management](images/Event%20Management.png)
 
 * **Participants Management** 
-  * Staff can manage participant’s engagement   
-    ![][image3]  
+  * Staff can manage participant’s engagement
+
+    ![Participants Management](images/Participants%20Management.png)  
+  
   * Staff also manages user accounts – they are able to deactivate accounts  
   * Staff may also view potential participants, accept/reject registrations  
   * Waitlist management based on event max participants  
@@ -61,22 +65,26 @@ OneMINDS centralizes event management, automates registration processes, tracks 
 * **Centralised Reports**  
   * Export to Excel sheet function for more portability \- separating the list of confirmed participants, waitlisted participants and volunteers of the filtered event.   
   * Event Registrations – records payment status, waitlist status and attendance, etc.
-    ![][image4] 
+
+    ![Centralised Reports](images/Centralised%20Reports.png)
 
 * **Sign-up, Login, Reset password**  
 
 * **Attendance Check-in with Built in QR Code Scanner**  
   * Staff is able to generate attendance QR code for each event  
-  * Participants are able to use QR code scanner to mark their attendance seamlessly  
-    ![][image5]  
+  * Participants are able to use QR code scanner to mark their attendance seamlessly
+
+    ![QR Code Scanner](images/QR%20Code%20Scanner.png)
 
 * **Event Forum**  
-  * Participants/Volunteers can view their registered events here and post comments  
-    ![][image6]  
+  * Participants/Volunteers can view their registered events here and post comments
+
+    ![Event Forum](images/Event%20Forum.png)  
 
 * ***Notifications***  
   * In-app notifications for event forum activity
-   ![][image7]
+
+    ![Notification](images/Notifications.png)
 
 
 
