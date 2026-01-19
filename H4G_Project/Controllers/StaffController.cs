@@ -259,6 +259,94 @@ namespace H4G_Project.Controllers
         }
 
         // ===============================
+        // PASSWORD RESET
+        // ===============================
+        [HttpGet]
+        public IActionResult ResetPassword()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> ResetPassword(IFormCollection form)
+        {
+            string email = form["Email"];
+            string currentPassword = form["CurrentPassword"];
+            string newPassword = form["NewPassword"];
+            string confirmPassword = form["ConfirmPassword"];
+
+            // Validate inputs
+            if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(currentPassword) ||
+                string.IsNullOrEmpty(newPassword) || string.IsNullOrEmpty(confirmPassword))
+            {
+                TempData["ErrorMessage"] = "Please fill in all fields.";
+                return View();
+            }
+
+            if (newPassword != confirmPassword)
+            {
+                TempData["ErrorMessage"] = "New passwords do not match.";
+                return View();
+            }
+
+            if (newPassword.Length < 8)
+            {
+                TempData["ErrorMessage"] = "New password must be at least 8 characters long.";
+                return View();
+            }
+
+            try
+            {
+                // 1. Verify staff exists in database
+                Staff? staff = await _staffContext.GetStaffByEmail(email);
+                if (staff == null)
+                {
+                    TempData["ErrorMessage"] = "Staff member not found.";
+                    return View();
+                }
+
+                // 2. Check if staff's last day of service has passed
+                if (!string.IsNullOrEmpty(staff.LastDayOfService))
+                {
+                    if (DateTime.TryParse(staff.LastDayOfService, out DateTime lastDayOfService))
+                    {
+                        if (lastDayOfService.Date < DateTime.Today)
+                        {
+                            TempData["ErrorMessage"] = "Access denied. Your employment period has ended.";
+                            return View();
+                        }
+                    }
+                }
+
+                // 3. Get user from Firebase and update password
+                var auth = FirebaseAdmin.Auth.FirebaseAuth.DefaultInstance;
+                var userRecord = await auth.GetUserByEmailAsync(email);
+
+                // Update password in Firebase
+                var updateRequest = new UserRecordArgs()
+                {
+                    Uid = userRecord.Uid,
+                    Password = newPassword
+                };
+
+                await auth.UpdateUserAsync(updateRequest);
+
+                TempData["SuccessMessage"] = "Password reset successfully! You can now login with your new password.";
+                return View();
+            }
+            catch (FirebaseAuthException ex)
+            {
+                TempData["ErrorMessage"] = $"Error resetting password: {ex.Message}";
+                return View();
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = "Staff member not found or invalid email.";
+                return View();
+            }
+        }
+
+        // ===============================
         // LOGOUT
         // ===============================
         public IActionResult LogOut()
@@ -544,41 +632,6 @@ namespace H4G_Project.Controllers
             var random = new Random();
             return new string(Enumerable.Repeat(chars, 12)
                 .Select(s => s[random.Next(s.Length)]).ToArray());
-        }
-
-        // ===============================
-        // DELETE USER (FOR TESTING)
-        // ===============================
-        [HttpPost]
-        public async Task<IActionResult> DeleteUser(string email)
-        {
-            if (string.IsNullOrEmpty(email))
-            {
-                TempData["ErrorMessage"] = "Email is required.";
-                return RedirectToAction("Index");
-            }
-
-            try
-            {
-                // 1️⃣ Delete from Firebase Authentication
-                var userRecord = await FirebaseAuth.DefaultInstance.GetUserByEmailAsync(email);
-                await FirebaseAuth.DefaultInstance.DeleteUserAsync(userRecord.Uid);
-
-                // 2️⃣ Delete from your Firestore database
-                await _userContext.DeleteUser(email);
-
-                TempData["SuccessMessage"] = $"User {email} deleted successfully from both Authentication and Database.";
-            }
-            catch (FirebaseAuthException ex)
-            {
-                TempData["ErrorMessage"] = $"Error deleting user from Authentication: {ex.Message}";
-            }
-            catch (Exception ex)
-            {
-                TempData["ErrorMessage"] = $"Error deleting user: {ex.Message}";
-            }
-
-            return RedirectToAction("Index");
         }
 
         // ===============================

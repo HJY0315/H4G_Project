@@ -334,6 +334,9 @@
             <input type="email" id="staffEmail" placeholder="Email" required />
             <input type="password" id="staffPassword" placeholder="Password" required />
             <input type="button" value="Log In" onclick="loginStaff()" />
+            <div style="margin-top: 15px;">
+                <a href="/Staff/ResetPassword" style="color: #0082c6; text-decoration: none; font-size: 14px;">Reset Password</a>
+            </div>
             <span style="color:red;">@TempData["StaffMessage"]</span>
         </form>
     </div>
