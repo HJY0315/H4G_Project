@@ -32,20 +32,17 @@
             padding: 10px 15px;
         }
 
-            .nav-link:hover {
-                background-color: #1f2933;
-                color: #ffffff;
-            }
+        .nav-link:hover {
+            background-color: #1f2933;
+            color: #ffffff;
+        }
     </style>
 </head>
 
 <body>
 
     <!-- Mobile Toggle Button -->
-    <button class="btn btn-dark d-md-none m-2"
-            type="button"
-            data-bs-toggle="collapse"
-            data-bs-target="#sidebarMenu">
+    <button class="btn btn-dark d-md-none m-2" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu">
         ☰ Menu
     </button>
 
@@ -53,8 +50,7 @@
         <div class="row flex-nowrap">
 
             <!-- Sidebar -->
-            <div id="sidebarMenu"
-                 class="col-auto col-md-3 col-xl-2 px-sm-2 px-0 sidebar collapse d-md-block">
+            <div id="sidebarMenu" class="col-auto col-md-3 col-xl-2 px-sm-2 px-0 sidebar collapse d-md-block">
                 <div class="d-flex flex-column align-items-center align-items-sm-start px-3 pt-3 text-white min-vh-100">
 
                     <a class="navbar-brand mb-3" href="@Url.Action("Index", "Staff")">
@@ -78,21 +74,6 @@
                                 a volunteer</span>
                         </a>
                         </li>
-
-                        <li class="nav-item">
-                            <a asp-controller="Home" asp-action="About" class="nav-link">
-                                <i class="fa fa-address-book-o me-2"></i>
-                                <span class="d-none d-sm-inline">About Us</span>
-                            </a>
-                        </li>
-
-                        <li class="nav-item">
-                            <a asp-controller="Home" asp-action="ContactUs" class="nav-link">
-                                <i class="fa fa-external-link me-2"></i>
-                                <span class="d-none d-sm-inline">Contact Us</span>
-                            </a>
-                        </li>
-
                     </ul>
 
                     <hr class="text-secondary w-100">
@@ -115,4 +96,5 @@
     @await RenderSectionAsync("Scripts", required: false)
 
 </body>
+
 </html>

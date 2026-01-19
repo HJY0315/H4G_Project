@@ -1,13 +1,12 @@
 ﻿﻿@{
-ViewData["Title"] = "Home Page";
-Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "Home Page";
+    Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
 <!-- Google Fonts -->
 <link href="https://fonts.googleapis.com/css?family=Poppins" rel="stylesheet">
 
 <style>
-
     html {
         background-color: #56baed;
     }
@@ -16,6 +15,21 @@ Layout = "~/Views/Shared/_Layout.cshtml";
         font-family: "Poppins", sans-serif;
         height: 100vh;
     }
+
+    /* Apply background only to the main content area, excluding sidebar */
+    .col.py-3 {
+        position: relative;
+        min-height: 100vh;
+        background: linear-gradient(rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.5)), url('/images/MINDS_background.png');
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+
 
     a {
         color: #92badd;
@@ -44,8 +58,9 @@ Layout = "~/Views/Shared/_Layout.cshtml";
         flex-direction: column;
         justify-content: center;
         width: 100%;
-        min-height: 100%;
         padding: 20px;
+        position: relative;
+        z-index: 10;
     }
 
     #formContent {
@@ -112,21 +127,21 @@ Layout = "~/Views/Shared/_Layout.cshtml";
         transition: all 0.3s ease-in-out;
     }
 
-        input[type=button]:hover,
-        input[type=submit]:hover,
-        input[type=reset]:hover {
-            background-color: #39ace7;
-        }
+    input[type=button]:hover,
+    input[type=submit]:hover,
+    input[type=reset]:hover {
+        background-color: #39ace7;
+    }
 
-        input[type=button]:active,
-        input[type=submit]:active,
-        input[type=reset]:active {
-            -moz-transform: scale(0.95);
-            -webkit-transform: scale(0.95);
-            -o-transform: scale(0.95);
-            -ms-transform: scale(0.95);
-            transform: scale(0.95);
-        }
+    input[type=button]:active,
+    input[type=submit]:active,
+    input[type=reset]:active {
+        -moz-transform: scale(0.95);
+        -webkit-transform: scale(0.95);
+        -o-transform: scale(0.95);
+        -ms-transform: scale(0.95);
+        transform: scale(0.95);
+    }
 
     input[type=text],
     input[type=email],
@@ -151,18 +166,18 @@ Layout = "~/Views/Shared/_Layout.cshtml";
         border-radius: 5px 5px 5px 5px;
     }
 
-        input[type=text],
-        input[type=email],
-        input[type=password]:focus {
-            background-color: #fff;
-            border-bottom: 2px solid #5fbae9;
-        }
+    input[type=text],
+    input[type=email],
+    input[type=password]:focus {
+        background-color: #fff;
+        border-bottom: 2px solid #5fbae9;
+    }
 
-        input[type=text],
-        input[type=email],
-        input[type=password]:placeholder {
-            color: #cccccc;
-        }
+    input[type=text],
+    input[type=email],
+    input[type=password]:placeholder {
+        color: #cccccc;
+    }
 
 
 
@@ -250,29 +265,29 @@ Layout = "~/Views/Shared/_Layout.cshtml";
         animation-duration: 1s;
     }
 
-        .fadeIn.first {
-            -webkit-animation-delay: 0.4s;
-            -moz-animation-delay: 0.4s;
-            animation-delay: 0.4s;
-        }
+    .fadeIn.first {
+        -webkit-animation-delay: 0.4s;
+        -moz-animation-delay: 0.4s;
+        animation-delay: 0.4s;
+    }
 
-        .fadeIn.second {
-            -webkit-animation-delay: 0.6s;
-            -moz-animation-delay: 0.6s;
-            animation-delay: 0.6s;
-        }
+    .fadeIn.second {
+        -webkit-animation-delay: 0.6s;
+        -moz-animation-delay: 0.6s;
+        animation-delay: 0.6s;
+    }
 
-        .fadeIn.third {
-            -webkit-animation-delay: 0.8s;
-            -moz-animation-delay: 0.8s;
-            animation-delay: 0.8s;
-        }
+    .fadeIn.third {
+        -webkit-animation-delay: 0.8s;
+        -moz-animation-delay: 0.8s;
+        animation-delay: 0.8s;
+    }
 
-        .fadeIn.fourth {
-            -webkit-animation-delay: 1s;
-            -moz-animation-delay: 1s;
-            animation-delay: 1s;
-        }
+    .fadeIn.fourth {
+        -webkit-animation-delay: 1s;
+        -moz-animation-delay: 1s;
+        animation-delay: 1s;
+    }
 
     /* Simple CSS3 Fade-in Animation */
     .underlineHover:after {
@@ -290,9 +305,9 @@ Layout = "~/Views/Shared/_Layout.cshtml";
         color: #0d0d0d;
     }
 
-        .underlineHover:hover:after {
-            width: 100%;
-        }
+    .underlineHover:hover:after {
+        width: 100%;
+    }
 
 
 
@@ -324,7 +339,8 @@ Layout = "~/Views/Shared/_Layout.cshtml";
             <input type="password" id="memberPassword" placeholder="Password" required />
             <input type="button" value="Log In" onclick="loginUser()" />
             <div style="margin-top: 15px;">
-                <a href="/User/ResetPassword" style="color: #0082c6; text-decoration: none; font-size: 14px;">Reset Password</a>
+                <a href="/User/ResetPassword" style="color: #0082c6; text-decoration: none; font-size: 14px;">Reset
+                    Password</a>
             </div>
         </form>
 
@@ -335,7 +351,8 @@ Layout = "~/Views/Shared/_Layout.cshtml";
             <input type="password" id="staffPassword" placeholder="Password" required />
             <input type="button" value="Log In" onclick="loginStaff()" />
             <div style="margin-top: 15px;">
-                <a href="/Staff/ResetPassword" style="color: #0082c6; text-decoration: none; font-size: 14px;">Reset Password</a>
+                <a href="/Staff/ResetPassword" style="color: #0082c6; text-decoration: none; font-size: 14px;">Reset
+                    Password</a>
             </div>
             <span style="color:red;">@TempData["StaffMessage"]</span>
         </form>
@@ -364,7 +381,7 @@ Layout = "~/Views/Shared/_Layout.cshtml";
     // ===============================
     // User login
     // ===============================
-    window.loginUser = async function() {
+    window.loginUser = async function () {
         const email = document.getElementById("memberEmail").value;
         const password = document.getElementById("memberPassword").value;
 
@@ -389,7 +406,7 @@ Layout = "~/Views/Shared/_Layout.cshtml";
     // ===============================
     // Legacy login for existing users
     // ===============================
-    window.legacyLoginUser = async function() {
+    window.legacyLoginUser = async function () {
         const email = document.getElementById("memberEmail").value;
         const password = document.getElementById("memberPassword").value;
 
@@ -417,7 +434,7 @@ Layout = "~/Views/Shared/_Layout.cshtml";
     // ===============================
     // Staff login
     // ===============================
-    window.loginStaff = async function() {
+    window.loginStaff = async function () {
         const email = document.getElementById("staffEmail").value;
         const password = document.getElementById("staffPassword").value;
 
