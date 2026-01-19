@@ -7,6 +7,12 @@
     var eventComments = ViewBag.EventComments as Dictionary<string, List<H4G_Project.Models.CommentVM>> ?? new Dictionary<string, List<H4G_Project.Models.CommentVM>>();
 }
 
+<style>
+    body {
+        background-color: #F5F9FC; /* light blue-grey page background */
+    }
+</style>
+
 <div class="container mt-4">
     <div class="row">
         @foreach (var ev in Model)
