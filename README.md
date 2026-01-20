@@ -146,6 +146,8 @@ https://localhost:7080 or https://localhost:7080
 **Staff**: rice@minds.com (password: ricerice)  
 **Volunteer**: meow@gmail.com (password: meowmeow)
 
+Click here to try the web app :)
+[OneMinds Project](https://oneminds-h4g-bwaxgccabkeefnbv.southeastasia-01.azurewebsites.net/ "Check out our Azure-hosted project")
 
 
 ## **What’s Next**
