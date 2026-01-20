@@ -1,4 +1,4 @@
-@model H4G_Project.Models.Event
+@model H4G_Project.Models.EventViewModel
 
 @{
     ViewData["Title"] = "Create Event";
@@ -20,37 +20,56 @@
                 </div>
             }
 
+            <!-- Validation Summary -->
+            @if (!ViewData.ModelState.IsValid)
+            {
+                <div class="alert alert-danger">
+                    <h6>Please fix the following errors:</h6>
+                    <div asp-validation-summary="All"></div>
+                </div>
+            }
+
             <form asp-action="CreateEvent" method="post" enctype="multipart/form-data">
+                @Html.AntiForgeryToken()
 
                 <div class="form-group">
-                    <label asp-for="Name"></label>
-                    <input asp-for="Name" class="form-control" />
+                    <label asp-for="Name" class="required">Event Name *</label>
+                    <input asp-for="Name" class="form-control" placeholder="Enter event name (3-100 characters)" required />
                     <span asp-validation-for="Name" class="text-danger"></span>
                 </div>
 
                 <div class="form-group">
-                    <label asp-for="Start"></label>
-                    <input asp-for="Start" type="datetime-local" class="form-control" />
+                    <label asp-for="Start" class="required">Start Date & Time *</label>
+                    <input asp-for="Start" type="datetime-local" class="form-control" required />
+                    <span asp-validation-for="Start" class="text-danger"></span>
                 </div>
 
                 <div class="form-group">
-                    <label asp-for="End"></label>
+                    <label asp-for="End">End Date & Time (Optional)</label>
                     <input asp-for="End" type="datetime-local" class="form-control" />
+                    <span asp-validation-for="End" class="text-danger"></span>
                 </div>
 
                 <div class="form-group">
-                    <label asp-for="Details"></label>
-                    <textarea asp-for="Details" class="form-control"></textarea>
+                    <label asp-for="Details" class="required">Event Details *</label>
+                    <textarea asp-for="Details" class="form-control" rows="4"
+                        placeholder="Describe the event details, activities, and what participants can expect... (10-1000 characters)" required></textarea>
+                    <span asp-validation-for="Details" class="text-danger"></span>
+                    <small class="form-text text-muted">Minimum 10 characters, maximum 1000 characters</small>
                 </div>
 
                 <div class="form-group">
-                    <label asp-for="RegistrationDueDate">Registration Due Date</label>
-                    <input asp-for="RegistrationDueDate" type="date" class="form-control" />
+                    <label asp-for="RegistrationDueDate" class="required">Registration Due Date *</label>
+                    <input asp-for="RegistrationDueDate" type="datetime-local" class="form-control" required />
+                    <span asp-validation-for="RegistrationDueDate" class="text-danger"></span>
                 </div>
 
                 <div class="form-group">
-                    <label asp-for="MaxParticipants">Max Participants</label>
-                    <input asp-for="MaxParticipants" type="number" min="1" class="form-control" />
+                    <label asp-for="MaxParticipants" class="required">Maximum Participants *</label>
+                    <input asp-for="MaxParticipants" type="number" min="1" max="10000" class="form-control"
+                        placeholder="Enter maximum number of participants" required />
+                    <span asp-validation-for="MaxParticipants" class="text-danger"></span>
+                    <small class="form-text text-muted">Must be between 1 and 10,000</small>
                 </div>
 
                 <!-- IMAGE UPLOAD UI -->
@@ -60,11 +79,7 @@
                     <div id="imageUploadBox" class="image-upload-box">
                         <span id="uploadHint">Click to upload image</span>
                         <img id="previewImage" />
-                        <input type="file"
-                               name="EventPhoto"
-                               id="EventPhoto"
-                               accept="image/*"
-                               hidden />
+                        <input type="file" name="EventPhoto" id="EventPhoto" accept="image/*" hidden />
                     </div>
 
                     <small class="text-muted">Optional. JPG / PNG only.</small>
@@ -79,9 +94,7 @@
 </div>
 
 @section Scripts {
-    @{
-        await Html.RenderPartialAsync("_ValidationScriptsPartial");
-    }
+    @Html.Partial("_ValidationScriptsPartial")
 
     <script>
         const box = document.getElementById("imageUploadBox");
@@ -98,6 +111,49 @@
             preview.src = URL.createObjectURL(file);
             preview.style.display = "block";
             hint.style.display = "none";
+        });
+
+        // Date validation
+        document.addEventListener('DOMContentLoaded', function () {
+            const startInput = document.querySelector('input[name="Start"]');
+            const endInput = document.querySelector('input[name="End"]');
+            const regDueDateInput = document.querySelector('input[name="RegistrationDueDate"]');
+
+            // Validate end date is after start date
+            function validateDates() {
+                if (startInput.value && endInput.value) {
+                    const startDate = new Date(startInput.value);
+                    const endDate = new Date(endInput.value);
+
+                    if (endDate <= startDate) {
+                        endInput.setCustomValidity('End date must be after start date');
+                    } else {
+                        endInput.setCustomValidity('');
+                    }
+                }
+            }
+
+            // Validate registration due date is before start date
+            function validateRegistrationDate() {
+                if (startInput.value && regDueDateInput.value) {
+                    const startDate = new Date(startInput.value);
+                    const regDate = new Date(regDueDateInput.value);
+
+                    if (regDate >= startDate) {
+                        regDueDateInput.setCustomValidity('Registration due date must be before event start date');
+                    } else {
+                        regDueDateInput.setCustomValidity('');
+                    }
+                }
+            }
+
+            if (startInput) startInput.addEventListener('change', function () {
+                validateDates();
+                validateRegistrationDate();
+            });
+
+            if (endInput) endInput.addEventListener('change', validateDates);
+            if (regDueDateInput) regDueDateInput.addEventListener('change', validateRegistrationDate);
         });
     </script>
 }
@@ -116,10 +172,10 @@
         overflow: hidden;
     }
 
-        .image-upload-box:hover {
-            border-color: #007bff;
-            background: #eef4ff;
-        }
+    .image-upload-box:hover {
+        border-color: #007bff;
+        background: #eef4ff;
+    }
 
     #previewImage {
         max-height: 100%;
@@ -131,5 +187,44 @@
     #uploadHint {
         color: #6c757d;
         font-size: 0.9rem;
+    }
+
+    /* Validation styling */
+    .form-control.is-invalid {
+        border-color: #dc3545;
+        box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+    }
+
+    .form-control.is-valid {
+        border-color: #28a745;
+        box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+    }
+
+    .text-danger {
+        font-size: 0.875rem;
+        margin-top: 0.25rem;
+    }
+
+    .form-text {
+        font-size: 0.8rem;
+    }
+
+    /* Required field styling */
+    .required {
+        font-weight: 600;
+    }
+
+    .required::after {
+        content: " *";
+        color: #dc3545;
+    }
+
+    /* Form validation styling */
+    .form-control:invalid {
+        border-color: #dc3545;
+    }
+
+    .form-control:valid {
+        border-color: #28a745;
     }
 </style>

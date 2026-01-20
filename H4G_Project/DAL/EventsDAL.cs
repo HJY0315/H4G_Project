@@ -14,7 +14,7 @@ namespace H4G_Project.DAL
 
         public EventsDAL()
         {
-            string jsonPath = "./DAL/config/squad-60b0b-firebase-adminsdk-fbsvc-cff3f594d5.json";
+            string jsonPath = "./DAL/config/squad-60b0b-firebase-adminsdk-fbsvc-d8a63509c3.json";
             string projectId = "squad-60b0b";
 
             using StreamReader r = new StreamReader(jsonPath);
@@ -361,13 +361,13 @@ namespace H4G_Project.DAL
                     if (doc.Exists)
                     {
                         var registration = doc.ConvertTo<EventRegistration>();
-                        
+
                         // Check if the event for this registration occurs in the current week
                         if (eventDict.ContainsKey(registration.EventId))
                         {
                             var eventObj = eventDict[registration.EventId];
                             DateTime eventDate = eventObj.Start.ToDateTime().Date;
-                            
+
                             // Check if event date falls within current week
                             if (eventDate >= weekStart && eventDate < weekEnd)
                             {
@@ -405,7 +405,7 @@ namespace H4G_Project.DAL
             try
             {
                 int currentCount = await GetUserWeeklyRegistrationCount(userEmail);
-                
+
                 // If we're checking for a specific event registration, we need to see if this would exceed the limit
                 int projectedCount = currentCount;
                 if (!string.IsNullOrEmpty(eventIdToRegister))
@@ -413,16 +413,16 @@ namespace H4G_Project.DAL
                     // Check if the event they're trying to register for is in the current week
                     var allEvents = await GetAllEvents();
                     var eventToRegister = allEvents.FirstOrDefault(e => e.Id == eventIdToRegister);
-                    
+
                     if (eventToRegister != null)
                     {
                         DateTime today = DateTime.Now;
                         int daysFromMonday = ((int)today.DayOfWeek - 1 + 7) % 7;
                         DateTime weekStart = today.AddDays(-daysFromMonday).Date;
                         DateTime weekEnd = weekStart.AddDays(7).Date;
-                        
+
                         DateTime eventDate = eventToRegister.Start.ToDateTime().Date;
-                        
+
                         // If the event is in the current week, add 1 to the projected count
                         if (eventDate >= weekStart && eventDate < weekEnd)
                         {
@@ -433,7 +433,7 @@ namespace H4G_Project.DAL
 
                 int limit = GetEngagementWeeklyLimit(engagementType);
                 bool canRegister = projectedCount <= limit;
-                
+
                 string message;
                 if (limit == int.MaxValue)
                 {
@@ -447,14 +447,14 @@ namespace H4G_Project.DAL
                     if (!string.IsNullOrEmpty(eventIdToRegister))
                     {
                         // Checking for a specific registration
-                        message = canRegister 
+                        message = canRegister
                             ? $"You have used {currentCount} of {limit} events this week. This registration would bring you to {projectedCount}."
                             : $"You have reached your weekly limit of {limit} events. Current registrations: {currentCount}. This registration would exceed your limit.";
                     }
                     else
                     {
                         // General check
-                        message = canRegister 
+                        message = canRegister
                             ? $"You have used {currentCount} of {limit} events this week."
                             : $"You have reached your weekly limit of {limit} events. Current registrations: {currentCount}.";
                     }
@@ -702,7 +702,7 @@ namespace H4G_Project.DAL
                 var eventRegistrations = allRegistrations.Where(r => r.EventId == eventId).ToList();
 
                 // Count current confirmed participants (excluding volunteers)
-                int confirmedParticipants = eventRegistrations.Count(r => 
+                int confirmedParticipants = eventRegistrations.Count(r =>
                     r.WaitlistStatus == "Confirmed" && r.Role == "Participant");
 
                 // Get waitlisted participants ordered by registration date (first come, first served)
@@ -719,10 +719,10 @@ namespace H4G_Project.DAL
                 {
                     // Update status to confirmed
                     await UpdateWaitlistStatus(waitlistedParticipant.Id, "Confirmed");
-                    
+
                     // Update payment status and amount
                     await UpdateRegistrationPaymentInfo(waitlistedParticipant.Id, "Pending", 50.0);
-                    
+
                     promoted++;
                 }
 
@@ -757,7 +757,7 @@ namespace H4G_Project.DAL
             try
             {
                 DocumentReference docRef = db.Collection("eventRegistrations").Document(registrationId);
-                
+
                 Dictionary<string, object> updates = new Dictionary<string, object>
                 {
                     { "paymentStatus", paymentStatus },

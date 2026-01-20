@@ -1,55 +1,40 @@
-﻿using Google.Cloud.Firestore;
 using System.ComponentModel.DataAnnotations;
 
 namespace H4G_Project.Models
 {
-    [FirestoreData]
-    public class Event
+    public class EventViewModel
     {
-        // Firestore document ID (not stored in Firestore)
-        [FirestoreDocumentId]
         public string Id { get; set; } = string.Empty;
-
-        [FirestoreProperty("eventID")]
         public int eventID { get; set; }
 
-        [FirestoreProperty("name")]
         [Required(ErrorMessage = "Event name is required")]
         [StringLength(100, MinimumLength = 3, ErrorMessage = "Event name must be between 3 and 100 characters")]
         [Display(Name = "Event Name")]
         public string Name { get; set; } = string.Empty;
 
-        [FirestoreProperty("details")]
         [Required(ErrorMessage = "Event details are required")]
         [StringLength(1000, MinimumLength = 10, ErrorMessage = "Event details must be between 10 and 1000 characters")]
         [Display(Name = "Event Details")]
         public string Details { get; set; } = string.Empty;
 
-        [FirestoreProperty("eventPhoto")]
         public string eventPhoto { get; set; } = string.Empty;
 
-        [FirestoreProperty("start")]
         [Required(ErrorMessage = "Event start date and time is required")]
         [Display(Name = "Start Date & Time")]
-        public Timestamp Start { get; set; }
+        public DateTime? Start { get; set; }
 
-        [FirestoreProperty("end")]
         [Display(Name = "End Date & Time")]
-        public Timestamp? End { get; set; }
+        public DateTime? End { get; set; }
 
-        [FirestoreProperty("registrationDueDate")]
         [Required(ErrorMessage = "Registration due date is required")]
         [Display(Name = "Registration Due Date")]
-        public Timestamp RegistrationDueDate { get; set; }
+        public DateTime? RegistrationDueDate { get; set; }
 
-        [FirestoreProperty("maxParticipants")]
         [Required(ErrorMessage = "Maximum participants is required")]
         [Range(1, 10000, ErrorMessage = "Maximum participants must be between 1 and 10,000")]
         [Display(Name = "Maximum Participants")]
         public int MaxParticipants { get; set; }
 
-        // unique for each event ;>
-        [FirestoreProperty("qrCode")]
         public string QrCode { get; set; } = string.Empty;
     }
 }

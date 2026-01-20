@@ -457,7 +457,7 @@ namespace H4G_Project.Controllers
         [HttpGet]
         public IActionResult CreateEvent()
         {
-            return View(new Event());
+            return View(new EventViewModel());
         }
 
         // Handle create event
@@ -465,47 +465,88 @@ namespace H4G_Project.Controllers
         // HANDLE CREATE EVENT WITH PHOTO
         // ===============================
         [HttpPost]
-        public async Task<IActionResult> CreateEvent(
-            string Name,
-            DateTime Start,
-            DateTime? End,
-            string Details,
-            DateTime RegistrationDueDate,
-            int MaxParticipants,
-            IFormFile EventPhoto) // Added file parameter
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateEvent(EventViewModel model, IFormFile EventPhoto)
         {
-            if (string.IsNullOrEmpty(Name))
+            // Server-side validation - check ModelState
+            if (!ModelState.IsValid)
             {
-                ModelState.AddModelError("Name", "Event name is required");
-                return View();
+                // Return the view with validation errors
+                return View(model);
             }
 
-            Event ev = new Event
+            // Additional custom validation for business rules
+            if (!model.Start.HasValue)
             {
-                Name = Name,
-                Start = Timestamp.FromDateTime(Start.ToUniversalTime()),
-                End = End.HasValue ? Timestamp.FromDateTime(End.Value.ToUniversalTime()) : null,
-                RegistrationDueDate = Timestamp.FromDateTime(RegistrationDueDate.ToUniversalTime()),
-                MaxParticipants = MaxParticipants,
-                Details = Details
-            };
+                ModelState.AddModelError("Start", "Event start date and time is required");
+                return View(model);
+            }
 
-            // 2️⃣ Save event → get Firestore ID
-            string eventId = await _eventsDAL.AddEventAndReturnId(ev);
-
-            // 3️⃣ Upload image to Firebase Storage (if exists)
-            if (EventPhoto != null && EventPhoto.Length > 0)
+            if (!model.RegistrationDueDate.HasValue)
             {
-                string imageUrl = await UploadEventPhotoToFirebase(eventId, EventPhoto);
+                ModelState.AddModelError("RegistrationDueDate", "Registration due date is required");
+                return View(model);
+            }
 
-                if (!string.IsNullOrEmpty(imageUrl))
+            if (model.Start.Value <= DateTime.Now)
+            {
+                ModelState.AddModelError("Start", "Event start date must be in the future");
+                return View(model);
+            }
+
+            if (model.End.HasValue && model.End.Value <= model.Start.Value)
+            {
+                ModelState.AddModelError("End", "Event end date must be after start date");
+                return View(model);
+            }
+
+            if (model.RegistrationDueDate.Value >= model.Start.Value)
+            {
+                ModelState.AddModelError("RegistrationDueDate", "Registration due date must be before event start date");
+                return View(model);
+            }
+
+            if (model.RegistrationDueDate.Value <= DateTime.Now)
+            {
+                ModelState.AddModelError("RegistrationDueDate", "Registration due date must be in the future");
+                return View(model);
+            }
+
+            try
+            {
+                // Create the event object for database storage
+                Event ev = new Event
                 {
-                    await _eventsDAL.UpdateEventPhoto(eventId, imageUrl);
-                }
-            }
+                    Name = model.Name,
+                    Start = Timestamp.FromDateTime(model.Start.Value.ToUniversalTime()),
+                    End = model.End.HasValue ? Timestamp.FromDateTime(model.End.Value.ToUniversalTime()) : null,
+                    RegistrationDueDate = Timestamp.FromDateTime(model.RegistrationDueDate.Value.ToUniversalTime()),
+                    MaxParticipants = model.MaxParticipants,
+                    Details = model.Details
+                };
 
-            TempData["SuccessMessage"] = "Event created successfully!";
-            return RedirectToAction(nameof(CreateEvent));
+                // Save event → get Firestore ID
+                string eventId = await _eventsDAL.AddEventAndReturnId(ev);
+
+                // Upload image to Firebase Storage (if exists)
+                if (EventPhoto != null && EventPhoto.Length > 0)
+                {
+                    string imageUrl = await UploadEventPhotoToFirebase(eventId, EventPhoto);
+
+                    if (!string.IsNullOrEmpty(imageUrl))
+                    {
+                        await _eventsDAL.UpdateEventPhoto(eventId, imageUrl);
+                    }
+                }
+
+                TempData["SuccessMessage"] = "Event created successfully!";
+                return RedirectToAction(nameof(CreateEvent));
+            }
+            catch (Exception ex)
+            {
+                ModelState.AddModelError("", $"Error creating event: {ex.Message}");
+                return View(model);
+            }
         }
 
         // ===============================
@@ -517,7 +558,7 @@ namespace H4G_Project.Controllers
             string serviceAccountPath = Path.Combine(
                 Directory.GetCurrentDirectory(),
                 "DAL", "config",
-                "squad-60b0b-firebase-adminsdk-fbsvc-cff3f594d5.json"
+                "squad-60b0b-firebase-adminsdk-fbsvc-d8a63509c3"
             );
 
             var credential = GoogleCredential.FromFile(serviceAccountPath);
