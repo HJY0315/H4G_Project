@@ -200,6 +200,33 @@ namespace H4G_Project.DAL
             }
         }
 
+        // Overload for updating event with all fields
+        public async Task<bool> UpdateEvent(string eventId, string name, string details, DateTime start, DateTime? end, DateTime registrationDueDate, int maxParticipants)
+        {
+            try
+            {
+                DocumentReference docRef = db.Collection("events").Document(eventId);
+
+                Dictionary<string, object> updates = new Dictionary<string, object>
+                {
+                    { "name", name },
+                    { "details", details },
+                    { "start", Timestamp.FromDateTime(start.ToUniversalTime()) },
+                    { "end", end.HasValue ? Timestamp.FromDateTime(end.Value.ToUniversalTime()) : null },
+                    { "registrationDueDate", Timestamp.FromDateTime(registrationDueDate.ToUniversalTime()) },
+                    { "maxParticipants", maxParticipants }
+                };
+
+                await docRef.UpdateAsync(updates);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error updating event: {ex.Message}");
+                return false;
+            }
+        }
+
         // 🔹 Delete event
         public async Task<bool> DeleteEvent(string eventId)
         {
@@ -212,6 +239,33 @@ namespace H4G_Project.DAL
             catch (Exception ex)
             {
                 Console.WriteLine($"Error deleting event: {ex.Message}");
+                return false;
+            }
+        }
+
+        // Method for updating event details from staff interface
+        public async Task<bool> UpdateEventDetails(string eventId, string name, string details, DateTime start, DateTime? end, DateTime registrationDueDate, int maxParticipants)
+        {
+            try
+            {
+                DocumentReference docRef = db.Collection("events").Document(eventId);
+
+                Dictionary<string, object> updates = new Dictionary<string, object>
+                {
+                    { "name", name },
+                    { "details", details },
+                    { "start", Timestamp.FromDateTime(start.ToUniversalTime()) },
+                    { "end", end.HasValue ? Timestamp.FromDateTime(end.Value.ToUniversalTime()) : null },
+                    { "registrationDueDate", Timestamp.FromDateTime(registrationDueDate.ToUniversalTime()) },
+                    { "maxParticipants", maxParticipants }
+                };
+
+                await docRef.UpdateAsync(updates);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error updating event details: {ex.Message}");
                 return false;
             }
         }

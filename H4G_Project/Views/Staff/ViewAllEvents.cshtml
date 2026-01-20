@@ -9,75 +9,83 @@
 }
 
 <div class="container mt-4">
+    @Html.AntiForgeryToken()
     <div class="row">
         @foreach (var ev in Model)
         {
-            <div class="col-md-4 mb-4">
-                <div class="card shadow" data-toggle="modal" data-target="#eventModal-@ev.Id" style="cursor:pointer;">
-                    <div class="card-body">
-                        <h5 class="card-title">@ev.Name</h5>
+                <div class="col-md-4 mb-4">
+                    <div class="card shadow">
+                        <!-- Modify Button - Top Right -->
+                        <div class="position-absolute modify-btn" style="top: 10px; right: 10px; z-index: 10;">
+                            <button class="btn btn-sm btn-warning" onclick="openEditModal('@ev.Id')" title="Modify Event">
+                                ✏️ Modify
+                            </button>
+                        </div>
+
+                        <div class="card-body" data-toggle="modal" data-target="#eventModal-@ev.Id" style="cursor:pointer;">
+                            <h5 class="card-title">@ev.Name</h5>
 
                         @if (!string.IsNullOrEmpty(ev.eventPhoto))
                         {
-                            <div class="text-center mb-3">
-                                <img src="@ev.eventPhoto" class="img-fluid rounded" style="max-height:200px; object-fit:cover;" />
-                            </div>
-                        }
-
-                        <p class="card-text">
-                            <strong>Start:</strong> @ev.Start.ToDateTime().ToString("yyyy-MM-dd HH:mm")<br />
-                            <strong>End:</strong> @(ev.End?.ToDateTime().ToString("yyyy-MM-dd HH:mm") ?? "-")<br />
-                            <strong>Max Participants:</strong> @ev.MaxParticipants<br />
-                            <strong>Registration Due:</strong> @ev.RegistrationDueDate.ToDateTime().ToString("yyyy-MM-dd")
-                        </p>
-                        <a class="btn btn-sm btn-secondary"
-                           href="@Url.Action("DownloadEventQRCode", "Staff", new { eventId = ev.Id })"
-                           target="_blank">
-                            Download Attendance QR
-                        </a>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Modal -->
-            <div class="modal fade" id="eventModal-@ev.Id" tabindex="-1" aria-hidden="true">
-                <div class="modal-dialog modal-xl">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title">@ev.Name</h5>
-                            <button type="button" class="close" data-dismiss="modal">&times;</button>
-                        </div>
-
-                        <div class="modal-body">
-                            <!-- Event Details -->
-                            <div class="event-details mb-4">
-                                @if (!string.IsNullOrEmpty(ev.eventPhoto))
-                                {
                                     <div class="text-center mb-3">
                                         <img src="@ev.eventPhoto" class="img-fluid rounded" style="max-height:200px; object-fit:cover;" />
                                     </div>
+                        }
+
+                            <p class="card-text">
+                                <strong>Start:</strong> @ev.Start.ToDateTime().ToString("yyyy-MM-dd HH:mm")<br />
+                                <strong>End:</strong> @(ev.End?.ToDateTime().ToString("yyyy-MM-dd HH:mm") ?? "-")<br />
+                                <strong>Max Participants:</strong> @ev.MaxParticipants<br />
+                                <strong>Registration Due:</strong> @ev.RegistrationDueDate.ToDateTime().ToString("yyyy-MM-dd")
+                            </p>
+                            <a class="btn btn-sm btn-secondary"
+                               href="@Url.Action("DownloadEventQRCode", "Staff", new { eventId = ev.Id })"
+                               target="_blank">
+                                Download Attendance QR
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modal -->
+                <div class="modal fade" id="eventModal-@ev.Id" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-xl">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">@ev.Name</h5>
+                                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                            </div>
+
+                            <div class="modal-body">
+                                <!-- Event Details -->
+                                <div class="event-details mb-4">
+                                @if (!string.IsNullOrEmpty(ev.eventPhoto))
+                                {
+                                            <div class="text-center mb-3">
+                                                <img src="@ev.eventPhoto" class="img-fluid rounded" style="max-height:200px; object-fit:cover;" />
+                                            </div>
                                 }
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <p><strong>Name:</strong> @ev.Name</p>
-                                    <p><strong>Description:</strong> @(ev.Details ?? "No description")</p>
-                                    <p><strong>Max Participants:</strong> @ev.MaxParticipants</p>
-                                </div>
-                                <div class="col-md-6">
-                                    <p><strong>Start:</strong> @ev.Start.ToDateTime().ToString("dddd, MMM dd yyyy HH:mm")</p>
-                                    <p><strong>End:</strong> @(ev.End?.ToDateTime().ToString("dddd, MMM dd yyyy HH:mm") ?? "Not specified")</p>
-                                    <p><strong>Registration Due:</strong> @ev.RegistrationDueDate.ToDateTime().ToString("dddd, MMM dd yyyy")</p>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <p><strong>Name:</strong> @ev.Name</p>
+                                        <p><strong>Description:</strong> @(ev.Details ?? "No description")</p>
+                                        <p><strong>Max Participants:</strong> @ev.MaxParticipants</p>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <p><strong>Start:</strong> @ev.Start.ToDateTime().ToString("dddd, MMM dd yyyy HH:mm")</p>
+                                        <p><strong>End:</strong> @(ev.End?.ToDateTime().ToString("dddd, MMM dd yyyy HH:mm") ?? "Not specified")</p>
+                                        <p><strong>Registration Due:</strong> @ev.RegistrationDueDate.ToDateTime().ToString("dddd, MMM dd yyyy")</p>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
 
-                            <hr />
+                                <hr />
 
-                            <!-- Comments Section -->
-                            <div class="comments-section">
-                                <h6 class="text-primary mb-3">Comments & Discussion</h6>
+                                <!-- Comments Section -->
+                                <div class="comments-section">
+                                    <h6 class="text-primary mb-3">Comments & Discussion</h6>
 
-                            @functions {
+                                @functions {
                                 IHtmlContent RenderComment(CommentVM c, string eventId, int depth = 0)
                                 {
                                     var indent = Math.Min(depth * 25, 200);
@@ -122,30 +130,87 @@
                             }
 
                             @{
-                                var comments = eventComments.ContainsKey(ev.Id) ? eventComments[ev.Id] : new List<CommentVM>();
-                                foreach (var c in comments.OrderBy(c => c.Timestamp))
-                                {
-                                    @RenderComment(c, ev.Id, 0)
+                                    var comments = eventComments.ContainsKey(ev.Id) ? eventComments[ev.Id] : new List<CommentVM>();
+                                    foreach (var c in comments.OrderBy(c => c.Timestamp))
+                                    {
+                                        @RenderComment(c, ev.Id, 0)
+                                    }
                                 }
-                            }
 
-                            <!-- Top-level comment form -->
-                            <form asp-action="AddComment" method="post" class="mt-3">
-                                <input type="hidden" name="eventId" value="@ev.Id" />
-                                <div class="input-group">
-                                    <input type="text" name="comment" class="form-control" placeholder="Add a comment..." required />
-                                    <div class="input-group-append">
-                                        <button type="submit" class="btn btn-primary">Comment</button>
+                                <!-- Top-level comment form -->
+                                <form asp-action="AddComment" method="post" class="mt-3">
+                                    <input type="hidden" name="eventId" value="@ev.Id" />
+                                    <div class="input-group">
+                                        <input type="text" name="comment" class="form-control" placeholder="Add a comment..." required />
+                                        <div class="input-group-append">
+                                            <button type="submit" class="btn btn-primary">Comment</button>
+                                        </div>
                                     </div>
-                                </div>
-                            </form>
+                                </form>
 
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
-                }
+
+            <!-- Edit Event Modal -->
+            <div class="modal fade" id="editEventModal-@ev.Id" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Modify Event: @ev.Name</h5>
+                            <button type="button" class="close" data-dismiss="modal">&times;</button>
+                        </div>
+                        <form id="editEventForm-@ev.Id" onsubmit="saveEventChanges('@ev.Id'); return false;">
+                            <div class="modal-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label>Event Name *</label>
+                                            <input type="text" class="form-control" id="editName-@ev.Id" value="@ev.Name" required>
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Start Date & Time *</label>
+                                            <input type="datetime-local" class="form-control" id="editStart-@ev.Id" 
+                                                   value="@ev.Start.ToDateTime().ToString("yyyy-MM-ddTHH:mm")" required>
+                                        </div>
+                                        <div class="form-group">
+                                            <label>End Date & Time</label>
+                                            <input type="datetime-local" class="form-control" id="editEnd-@ev.Id" 
+                                                   value="@(ev.End?.ToDateTime().ToString("yyyy-MM-ddTHH:mm") ?? "")">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label>Registration Due Date *</label>
+                                            <input type="datetime-local" class="form-control" id="editRegDue-@ev.Id" 
+                                                   value="@ev.RegistrationDueDate.ToDateTime().ToString("yyyy-MM-ddTHH:mm")" required>
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Maximum Participants *</label>
+                                            <input type="number" class="form-control" id="editMaxParticipants-@ev.Id" 
+                                                   value="@ev.MaxParticipants" min="1" max="10000" required>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label>Event Details *</label>
+                                    <textarea class="form-control" id="editDetails-@ev.Id" rows="4" required>@(ev.Details ?? "")</textarea>
+                                </div>
+                                
+                                <!-- Validation Messages -->
+                                <div id="editValidationErrors-@ev.Id" class="alert alert-danger" style="display: none;"></div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                                <button type="submit" class="btn btn-primary">Save Changes</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        }
     </div>
 </div>
 
@@ -153,6 +218,137 @@
     function toggleReply(id) {
         const f = document.getElementById("reply-form-" + id);
         if(f) f.style.display = f.style.display === "none" ? "block" : "none";
+    }
+
+    function openEditModal(eventId) {
+        // Close any open event detail modal
+        $('#eventModal-' + eventId).modal('hide');
+        
+        // Open the edit modal
+        $('#editEventModal-' + eventId).modal('show');
+    }
+
+    function saveEventChanges(eventId) {
+        // Get form values
+        const name = document.getElementById('editName-' + eventId).value.trim();
+        const start = document.getElementById('editStart-' + eventId).value;
+        const end = document.getElementById('editEnd-' + eventId).value;
+        const regDue = document.getElementById('editRegDue-' + eventId).value;
+        const maxParticipants = document.getElementById('editMaxParticipants-' + eventId).value;
+        const details = document.getElementById('editDetails-' + eventId).value.trim();
+        
+        // Validation
+        const errors = [];
+        
+        if (!name || name.length < 3) {
+            errors.push('Event name must be at least 3 characters long');
+        }
+        
+        if (!details || details.length < 10) {
+            errors.push('Event details must be at least 10 characters long');
+        }
+        
+        if (!start) {
+            errors.push('Start date and time is required');
+        }
+        
+        if (!regDue) {
+            errors.push('Registration due date is required');
+        }
+        
+        if (!maxParticipants || maxParticipants < 1 || maxParticipants > 10000) {
+            errors.push('Maximum participants must be between 1 and 10,000');
+        }
+        
+        // Date validation
+        if (start && regDue) {
+            const startDate = new Date(start);
+            const regDueDate = new Date(regDue);
+            const now = new Date();
+            
+            if (startDate <= now) {
+                errors.push('Start date must be in the future');
+            }
+            
+            if (regDueDate >= startDate) {
+                errors.push('Registration due date must be before start date');
+            }
+            
+            if (end) {
+                const endDate = new Date(end);
+                if (endDate <= startDate) {
+                    errors.push('End date must be after start date');
+                }
+            }
+        }
+        
+        // Show validation errors
+        const errorDiv = document.getElementById('editValidationErrors-' + eventId);
+        if (errors.length > 0) {
+            errorDiv.innerHTML = '<strong>Please fix the following errors:</strong><ul><li>' + errors.join('</li><li>') + '</li></ul>';
+            errorDiv.style.display = 'block';
+            return false;
+        } else {
+            errorDiv.style.display = 'none';
+        }
+        
+        // Prepare data for submission
+        const formData = new FormData();
+        formData.append('eventId', eventId);
+        formData.append('name', name);
+        formData.append('start', start);
+        formData.append('end', end);
+        formData.append('registrationDueDate', regDue);
+        formData.append('maxParticipants', maxParticipants);
+        formData.append('details', details);
+        
+        console.log('Form data being sent:');
+        console.log('EventId:', eventId);
+        console.log('Name:', name);
+        console.log('Start:', start);
+        console.log('End:', end);
+        console.log('RegDue:', regDue);
+        console.log('MaxParticipants:', maxParticipants);
+        console.log('Details:', details);
+        
+        // Add anti-forgery token
+        const token = document.querySelector('input[name="__RequestVerificationToken"]');
+        if (token) {
+            formData.append('__RequestVerificationToken', token.value);
+            console.log('Anti-forgery token added:', token.value);
+        } else {
+            console.log('Warning: Anti-forgery token not found');
+        }
+        
+        // Submit the form
+        console.log('Submitting form data:', formData);
+        fetch('/Staff/UpdateEvent', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => {
+            console.log('Response received:', response);
+            return response.json();
+        })
+        .then(data => {
+            console.log('Response data:', data);
+            if (data.success) {
+                // Close modal and refresh page
+                $('#editEventModal-' + eventId).modal('hide');
+                location.reload();
+            } else {
+                // Show error message
+                errorDiv.innerHTML = '<strong>Error:</strong> ' + (data.message || 'Failed to update event');
+                errorDiv.style.display = 'block';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            errorDiv.innerHTML = '<strong>Error:</strong> Failed to update event. Please try again.';
+            errorDiv.style.display = 'block';
+        });
+        
+        return false;
     }
 </script>
 
@@ -189,5 +385,35 @@
         border: 1px solid #dee2e6;
         border-radius: 4px;
         margin-top: 8px;
+    }
+
+    /* Modify button styling */
+    .card {
+        position: relative;
+        transition: transform 0.2s ease;
+    }
+
+    .card:hover {
+        transform: translateY(-2px);
+    }
+
+    .modify-btn {
+        opacity: 0.9;
+        transition: opacity 0.2s ease;
+    }
+
+    .card:hover .modify-btn {
+        opacity: 1;
+    }
+
+    /* Form styling in modal */
+    .modal-body .form-group label {
+        font-weight: 600;
+        color: #495057;
+    }
+
+    .modal-body .form-control:focus {
+        border-color: #007bff;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
     }
 </style>

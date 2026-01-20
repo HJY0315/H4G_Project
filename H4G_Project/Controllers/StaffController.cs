@@ -558,7 +558,7 @@ namespace H4G_Project.Controllers
             string serviceAccountPath = Path.Combine(
                 Directory.GetCurrentDirectory(),
                 "DAL", "config",
-                "squad-60b0b-firebase-adminsdk-fbsvc-d8a63509c3"
+                "squad-60b0b-firebase-adminsdk-fbsvc-d8a63509c3.json"
             );
 
             var credential = GoogleCredential.FromFile(serviceAccountPath);
@@ -743,6 +743,109 @@ namespace H4G_Project.Controllers
             }
 
             return RedirectToAction("ManageEngagement");
+        }
+
+        // ===============================
+        // UPDATE EVENT
+        // ===============================
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateEvent(IFormCollection form)
+        {
+            Console.WriteLine("=== UpdateEvent method called ===");
+            try
+            {
+                string eventId = form["eventId"];
+                string name = form["name"];
+                string startStr = form["start"];
+                string endStr = form["end"];
+                string regDueStr = form["registrationDueDate"];
+                string maxParticipantsStr = form["maxParticipants"];
+                string details = form["details"];
+
+                Console.WriteLine($"EventId: {eventId}");
+                Console.WriteLine($"Name: {name}");
+                Console.WriteLine($"Start: {startStr}");
+                Console.WriteLine($"Details: {details}");
+
+                // Validation
+                if (string.IsNullOrEmpty(eventId) || string.IsNullOrEmpty(name) ||
+                    string.IsNullOrEmpty(startStr) || string.IsNullOrEmpty(regDueStr) ||
+                    string.IsNullOrEmpty(maxParticipantsStr) || string.IsNullOrEmpty(details))
+                {
+                    return Json(new { success = false, message = "All required fields must be filled" });
+                }
+
+                // Parse dates
+                if (!DateTime.TryParse(startStr, out DateTime start))
+                {
+                    return Json(new { success = false, message = "Invalid start date format" });
+                }
+
+                if (!DateTime.TryParse(regDueStr, out DateTime regDue))
+                {
+                    return Json(new { success = false, message = "Invalid registration due date format" });
+                }
+
+                DateTime? end = null;
+                if (!string.IsNullOrEmpty(endStr) && DateTime.TryParse(endStr, out DateTime endDate))
+                {
+                    end = endDate;
+                }
+
+                if (!int.TryParse(maxParticipantsStr, out int maxParticipants))
+                {
+                    return Json(new { success = false, message = "Invalid maximum participants value" });
+                }
+
+                // Business logic validation
+                if (start <= DateTime.Now)
+                {
+                    return Json(new { success = false, message = "Start date must be in the future" });
+                }
+
+                if (regDue >= start)
+                {
+                    return Json(new { success = false, message = "Registration due date must be before start date" });
+                }
+
+                if (end.HasValue && end.Value <= start)
+                {
+                    return Json(new { success = false, message = "End date must be after start date" });
+                }
+
+                if (maxParticipants < 1 || maxParticipants > 10000)
+                {
+                    return Json(new { success = false, message = "Maximum participants must be between 1 and 10,000" });
+                }
+
+                if (name.Length < 3 || name.Length > 100)
+                {
+                    return Json(new { success = false, message = "Event name must be between 3 and 100 characters" });
+                }
+
+                if (details.Length < 10 || details.Length > 1000)
+                {
+                    return Json(new { success = false, message = "Event details must be between 10 and 1000 characters" });
+                }
+
+                // Update the event in the database
+                bool success = await _eventsDAL.UpdateEventDetails(eventId, name, details, start, end, regDue, maxParticipants);
+
+                if (success)
+                {
+                    return Json(new { success = true, message = "Event updated successfully" });
+                }
+                else
+                {
+                    return Json(new { success = false, message = "Failed to update event in database" });
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error updating event: {ex.Message}");
+                return Json(new { success = false, message = "An error occurred while updating the event" });
+            }
         }
     }
 }
