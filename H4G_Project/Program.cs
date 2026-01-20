@@ -6,15 +6,32 @@ using H4G_Project.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Firebase initialization for auth
-if (FirebaseApp.DefaultInstance == null)
+// Firebase initialization for auth - handle missing credentials gracefully
+try
 {
-    FirebaseApp.Create(new AppOptions
+    if (FirebaseApp.DefaultInstance == null)
     {
-        Credential = GoogleCredential.FromFile(
-            Path.Combine(Directory.GetCurrentDirectory(), "DAL", "config", "squad-60b0b-firebase-adminsdk-fbsvc-cff3f594d5.json")
-        )
-    });
+        var credentialPath = Path.Combine(Directory.GetCurrentDirectory(), "DAL", "config", "squad-60b0b-firebase-adminsdk-fbsvc-cff3f594d5.json");
+        
+        if (File.Exists(credentialPath))
+        {
+            FirebaseApp.Create(new AppOptions
+            {
+                Credential = GoogleCredential.FromFile(credentialPath)
+            });
+            Console.WriteLine("Firebase initialized successfully");
+        }
+        else
+        {
+            Console.WriteLine("Firebase credential file not found. Firebase features will be disabled.");
+            // Continue without Firebase for now
+        }
+    }
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"Firebase initialization failed: {ex.Message}");
+    // Continue without Firebase for now
 }
 
 builder.Services.AddScoped<NotificationService>();

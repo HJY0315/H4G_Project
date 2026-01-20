@@ -30,14 +30,31 @@ namespace H4G_Project.DAL
             Console.WriteLine($"File exists: {File.Exists(serviceAccountPath)}");
             Console.WriteLine($"Using bucket: {bucketName}");
 
-            // Set environment variable for Firebase
-            Environment.SetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS", serviceAccountPath);
-
-            db = new FirestoreDbBuilder
+            try
             {
-                ProjectId = projectId,
-                JsonCredentials = File.ReadAllText(serviceAccountPath)
-            }.Build();
+                if (File.Exists(serviceAccountPath))
+                {
+                    // Set environment variable for Firebase
+                    Environment.SetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS", serviceAccountPath);
+
+                    db = new FirestoreDbBuilder
+                    {
+                        ProjectId = projectId,
+                        JsonCredentials = File.ReadAllText(serviceAccountPath)
+                    }.Build();
+                    
+                    Console.WriteLine("Firebase initialized successfully");
+                }
+                else
+                {
+                    Console.WriteLine("Firebase credentials not found. Database operations will fail.");
+                    // Continue without Firebase for now
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Firebase initialization error: {ex.Message}");
+            }
         }
 
         /// <summary>
