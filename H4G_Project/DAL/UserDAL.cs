@@ -15,31 +15,14 @@ namespace H4G_Project.DAL
         {
             string jsonPath = "./DAL/config/squad-60b0b-firebase-adminsdk-fbsvc-cff3f594d5.json";
             string projectId = "squad-60b0b";
-            
-            try
-            {
-                if (File.Exists(jsonPath))
-                {
-                    using StreamReader r = new StreamReader(jsonPath);
-                    string json = r.ReadToEnd();
+            using StreamReader r = new StreamReader(jsonPath);
+            string json = r.ReadToEnd();
 
-                    db = new FirestoreDbBuilder
-                    {
-                        ProjectId = projectId,
-                        JsonCredentials = json
-                    }.Build();
-                }
-                else
-                {
-                    Console.WriteLine("Firebase credentials not found. Database operations will fail.");
-                    // For deployment without credentials, we'll handle this gracefully
-                    // In production, you should use environment variables
-                }
-            }
-            catch (Exception ex)
+            db = new FirestoreDbBuilder
             {
-                Console.WriteLine($"Firebase initialization error: {ex.Message}");
-            }
+                ProjectId = projectId,
+                JsonCredentials = json
+            }.Build();
         }
 
         // Get user by username

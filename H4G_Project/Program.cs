@@ -6,32 +6,15 @@ using H4G_Project.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Firebase initialization for auth - handle missing credentials gracefully
-try
+// Firebase initialization for auth
+if (FirebaseApp.DefaultInstance == null)
 {
-    if (FirebaseApp.DefaultInstance == null)
+    FirebaseApp.Create(new AppOptions
     {
-        var credentialPath = Path.Combine(Directory.GetCurrentDirectory(), "DAL", "config", "squad-60b0b-firebase-adminsdk-fbsvc-cff3f594d5.json");
-        
-        if (File.Exists(credentialPath))
-        {
-            FirebaseApp.Create(new AppOptions
-            {
-                Credential = GoogleCredential.FromFile(credentialPath)
-            });
-            Console.WriteLine("Firebase initialized successfully");
-        }
-        else
-        {
-            Console.WriteLine("Firebase credential file not found. Firebase features will be disabled.");
-            // Continue without Firebase for now
-        }
-    }
-}
-catch (Exception ex)
-{
-    Console.WriteLine($"Firebase initialization failed: {ex.Message}");
-    // Continue without Firebase for now
+        Credential = GoogleCredential.FromFile(
+            Path.Combine(Directory.GetCurrentDirectory(), "DAL", "config", "squad-60b0b-firebase-adminsdk-fbsvc-cff3f594d5.json")
+        )
+    });
 }
 
 builder.Services.AddScoped<NotificationService>();
@@ -72,6 +55,4 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
-// Configure for Render deployment
-var port = Environment.GetEnvironmentVariable("PORT") ?? "10000";
-app.Run($"http://0.0.0.0:{port}");
+app.Run();
