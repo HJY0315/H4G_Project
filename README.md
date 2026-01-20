@@ -27,7 +27,8 @@ OneMINDS centralizes event management, automates registration processes, tracks 
   * Firebase Firestore  
 * **Authentication**  
   * Firebase Authentication
-
+* **Hosting**  
+  * Microsoft Azure
 
 
 ## **Features**
