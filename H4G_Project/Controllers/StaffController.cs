@@ -558,7 +558,7 @@ namespace H4G_Project.Controllers
             string serviceAccountPath = Path.Combine(
                 Directory.GetCurrentDirectory(),
                 "DAL", "config",
-                "squad-60b0b-firebase-adminsdk-fbsvc-d8a63509c3.json"
+                "squad-60b0b-firebase-adminsdk-fbsvc-ce9b109053.json"
             );
 
             var credential = GoogleCredential.FromFile(serviceAccountPath);
