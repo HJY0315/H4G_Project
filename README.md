@@ -127,8 +127,9 @@ H4G\_Project/DAL/config
 ```
 H4G\_Project/appsettings.json 
 ```
-6. Paste the 16-digit code into xxx.  
-7. Run the application:
+6. Add a new line {"FromPassword" : APP_PASSWORD}
+7. Replace APP_PASSWORD with the 16-digit code.  
+8. Run the application:
 ```
 dotnet run
 ```
